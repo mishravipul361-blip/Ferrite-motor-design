@@ -1,0 +1,13 @@
+RESISTANCE v7 (DC)
+coil length 1962.4 mm (unchanged), 12 coils, delta, 2 parallel x 2 series; I coil 104 A, phase 208 A, line 360.3 A rms
+2.90 mm (before)  bare 2.9000 mm  Cu 6.6052 mm2  J 15.75 A/mm2  copper in 12 coils 1394 g
+    20 C  coil = phase 5.122 mOhm  line-line 3.415 mOhm   loss winding 665 W + busbar 24.9 W = 690 W
+   100 C  coil = phase 6.732 mOhm  line-line 4.488 mOhm   loss winding 874 W + busbar 32.8 W = 907 W
+   150 C  coil = phase 7.739 mOhm  line-line 5.159 mOhm   loss winding 1004 W + busbar 37.7 W = 1042 W
+   180 C  coil = phase 8.343 mOhm  line-line 5.562 mOhm   loss winding 1083 W + busbar 40.6 W = 1123 W
+SWG 11 (2.946 mm)  bare 2.9464 mm  Cu 6.8183 mm2  J 15.25 A/mm2  copper in 12 coils 1439 g
+    20 C  coil = phase 4.962 mOhm  line-line 3.308 mOhm   loss winding 644 W + busbar 24.9 W = 669 W
+   100 C  coil = phase 6.522 mOhm  line-line 4.348 mOhm   loss winding 847 W + busbar 32.8 W = 879 W
+   150 C  coil = phase 7.497 mOhm  line-line 4.998 mOhm   loss winding 973 W + busbar 37.7 W = 1011 W
+   180 C  coil = phase 8.082 mOhm  line-line 5.388 mOhm   loss winding 1049 W + busbar 40.6 W = 1090 W
+Busbar: DC estimate, welds and bolted joints not included.

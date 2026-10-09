@@ -1,0 +1,95 @@
+PARTS
+  tooth     vol   37409.9  solids 1  valid True
+  bobbin A  vol    2284.6  solids 1  valid True
+  bobbin B  vol    2393.2  solids 1  valid True
+  coil      vol   13837.0  solids 1  valid True
+  L1        vol    7646.1  solids 1  valid True
+  L2        vol    8174.1  solids 1  valid True
+  L3        vol    7910.1  solids 1  valid True
+  carrier   vol   48857.0  solids 1  valid True
+  links     6 solids, vol 1724.5 each
+CLEARANCE  (true minimum distance, rule >= 0.10 mm)
+  coil x lamination (own tooth)              0.5034  OK
+  coil x bobbin half A                       0.1104  OK
+  coil x bobbin half B                       0.1099  OK
+  coil x neighbour bobbin A                  6.6320  OK
+  coil x neighbour bobbin B                  6.6344  OK
+  coil x neighbour tooth                     2.9448  OK
+  coil x neighbour coil (centrelines)        0.4577  OK
+  coil wire x itself (turn to turn)          0.1017  OK
+  bobbin x lamination (moulding fit)         0.1500  fit 0.15 by design
+  busbar L1 x L2                             0.8050  OK
+  busbar L1 x L3                             0.8050  OK
+  busbar L1 x link T12.S-T1.S                6.1695  OK
+  busbar L1 x link T7.S-T6.S                 6.1695  OK
+  busbar L1 x link T4.S-T5.S                42.4388  OK
+  busbar L1 x link T11.S-T10.S               7.3790  OK
+  busbar L1 x link T3.S-T2.S                 6.1695  OK
+  busbar L1 x link T8.S-T9.S                 6.1695  OK
+  busbar L2 x L3                             0.8050  OK
+  busbar L2 x link T12.S-T1.S                1.0000  OK
+  busbar L2 x link T7.S-T6.S                 1.7642  OK
+  busbar L2 x link T4.S-T5.S                 1.0000  OK
+  busbar L2 x link T11.S-T10.S               1.0000  OK
+  busbar L2 x link T3.S-T2.S                 1.0000  OK
+  busbar L2 x link T8.S-T9.S                41.4855  OK
+  busbar L3 x link T12.S-T1.S               41.7738  OK
+  busbar L3 x link T7.S-T6.S                 5.0000  OK
+  busbar L3 x link T4.S-T5.S                 5.0000  OK
+  busbar L3 x link T11.S-T10.S               5.2070  OK
+  busbar L3 x link T3.S-T2.S                 5.0000  OK
+  busbar L3 x link T8.S-T9.S                 5.0000  OK
+  busbar link T12.S-T1.S x link T7.S-T6.S  101.6706  OK
+  busbar link T12.S-T1.S x link T4.S-T5.S   71.3238  OK
+  busbar link T12.S-T1.S x link T11.S-T10.S  21.8659  OK
+  busbar link T12.S-T1.S x link T3.S-T2.S   21.8659  OK
+  busbar link T12.S-T1.S x link T8.S-T9.S   71.3238  OK
+  busbar link T7.S-T6.S x link T4.S-T5.S    21.8659  OK
+  busbar link T7.S-T6.S x link T11.S-T10.S  71.3238  OK
+  busbar link T7.S-T6.S x link T3.S-T2.S    71.3238  OK
+  busbar link T7.S-T6.S x link T8.S-T9.S    21.8659  OK
+  busbar link T4.S-T5.S x link T11.S-T10.S 101.6706  OK
+  busbar link T4.S-T5.S x link T3.S-T2.S    21.8659  OK
+  busbar link T4.S-T5.S x link T8.S-T9.S    71.3238  OK
+  busbar link T11.S-T10.S x link T3.S-T2.S  71.3238  OK
+  busbar link T11.S-T10.S x link T8.S-T9.S  21.8659  OK
+  busbar link T3.S-T2.S x link T8.S-T9.S   101.6706  OK
+  busbar L1 x carrier                        0.1050  OK
+  busbar L2 x carrier                        0.1050  OK
+  busbar L3 x carrier                        0.1050  OK
+  busbar link T12.S-T1.S x carrier           0.1050  OK
+  busbar link T7.S-T6.S x carrier            0.1050  OK
+  busbar link T4.S-T5.S x carrier            0.1050  OK
+  busbar link T11.S-T10.S x carrier          0.1050  OK
+  busbar link T3.S-T2.S x carrier            0.1050  OK
+  busbar link T8.S-T9.S x carrier            0.1050  OK
+  carrier x lamination (12 teeth)            0.1050  OK
+  carrier x 12 coils                         1.1654  OK
+  busbar copper x lamination                15.5000  OK
+CONNECTIONS  (each lead top: nearest copper part and its gap; expected from the circuit)
+  T1.S   -> link T12.S-T1.S    gap 0.105   (next L2                 8.9)   expected link T12.S-T1.S    OK
+  T1.F   -> L2                 gap 0.105   (next L1                 3.4)   expected L2                 OK
+  T2.S   -> link T3.S-T2.S     gap 0.105   (next L1                 8.9)   expected link T3.S-T2.S     OK
+  T2.F   -> L1                 gap 0.105   (next link T3.S-T2.S     6.1)   expected L1                 OK
+  T3.S   -> link T3.S-T2.S     gap 0.105   (next L3                 8.9)   expected link T3.S-T2.S     OK
+  T3.F   -> L3                 gap 0.105   (next link T3.S-T2.S     6.1)   expected L3                 OK
+  T4.S   -> link T4.S-T5.S     gap 0.105   (next L2                 8.9)   expected link T4.S-T5.S     OK
+  T4.F   -> L2                 gap 0.105   (next link T4.S-T5.S     6.1)   expected L2                 OK
+  T5.S   -> link T4.S-T5.S     gap 0.105   (next L3                 8.9)   expected link T4.S-T5.S     OK
+  T5.F   -> L3                 gap 0.105   (next link T4.S-T5.S     6.1)   expected L3                 OK
+  T6.S   -> link T7.S-T6.S     gap 0.105   (next L2                 8.9)   expected link T7.S-T6.S     OK
+  T6.F   -> L2                 gap 0.105   (next link T7.S-T6.S     6.1)   expected L2                 OK
+  T7.S   -> link T7.S-T6.S     gap 0.105   (next L1                 8.9)   expected link T7.S-T6.S     OK
+  T7.F   -> L1                 gap 0.105   (next link T7.S-T6.S     6.1)   expected L1                 OK
+  T8.S   -> link T8.S-T9.S     gap 0.105   (next L3                 8.9)   expected link T8.S-T9.S     OK
+  T8.F   -> L3                 gap 0.105   (next L1                 3.4)   expected L3                 OK
+  T9.S   -> link T8.S-T9.S     gap 0.105   (next L1                 8.9)   expected link T8.S-T9.S     OK
+  T9.F   -> L1                 gap 0.105   (next link T8.S-T9.S     6.1)   expected L1                 OK
+  T10.S  -> link T11.S-T10.S   gap 0.105   (next L3                 8.9)   expected link T11.S-T10.S   OK
+  T10.F  -> L3                 gap 0.105   (next L1                 3.4)   expected L3                 OK
+  T11.S  -> link T11.S-T10.S   gap 0.105   (next L2                 8.9)   expected link T11.S-T10.S   OK
+  T11.F  -> L2                 gap 0.105   (next L1                 3.4)   expected L2                 OK
+  T12.S  -> link T12.S-T1.S    gap 0.105   (next L1                 8.9)   expected link T12.S-T1.S    OK
+  T12.F  -> L1                 gap 0.105   (next link T12.S-T1.S    6.1)   expected L1                 OK
+  coil x foreign copper (not its own tabs)       min 2.4100  OK
+VERDICT  ALL CLEARANCES >= 0.10 mm, ALL 24 CONNECTIONS MATCH THE WIRING DIAGRAM   (52s)

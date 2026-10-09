@@ -1,0 +1,6 @@
+{
+ "_note": "Calibrated 2026-10-09 so FEMM peak torque at 360 A rms matches Motor-CAD (~45 N.m). Sensitivities (calib.json): stacking 0.95 -0.7 %, mu_r 1.10 -1.3 %, magnets 60 C -7.2 %. Uncalibrated baseline was 20 C / 0.97 / 1.05 -> 47.1 N.m.",
+ "magnet_temp_C": 35.0,
+ "stacking": 0.95,
+ "mu_mag": 1.10
+}

@@ -1,0 +1,368 @@
+<title>v7 Motor EM Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,400..700&family=JetBrains+Mono:wght@400;600&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/plotly.js/2.27.0/plotly.min.js"></script>
+<style>
+/* Layout: engineering datasheet - sticky contents rail + one reading column; same tokens as spoke_rotor_explorer */
+:root{
+  --paper:#E9EDEF; --panel:#F7F9FA; --ink:#15212A; --ink2:#4A5963; --rule:#C6D0D6; --grid:#DDE3E7;
+  --c1:#00897B; --c2:#C23A30; --c3:#2D5C9F; --c4:#A85E00;
+  --ok:#2E7D4F; --okbg:#D7EDDF; --warn:#9A6400; --warnbg:#F6E7C6; --bad:#B3261E; --badbg:#F6D7D4;
+  --seq0:#E3F2EF; --seq1:#00594F; --hot0:#FBEBD7; --hot1:#8A2E10;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --paper:#10171C; --panel:#162027; --ink:#E2E8EB; --ink2:#9AA9B2; --rule:#2A3842; --grid:#22303A;
+  --c1:#26A396; --c2:#E0685E; --c3:#6B96D6; --c4:#BC8024;
+  --ok:#5BC08A; --okbg:#1F4633; --warn:#E8B24A; --warnbg:#4A3A14; --bad:#F2766D; --badbg:#4D2220;
+  --seq0:#0F2B28; --seq1:#7FE0D2; --hot0:#2E1C10; --hot1:#F5B27A; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --paper:#10171C; --panel:#162027; --ink:#E2E8EB; --ink2:#9AA9B2; --rule:#2A3842; --grid:#22303A;
+  --c1:#26A396; --c2:#E0685E; --c3:#6B96D6; --c4:#BC8024;
+  --ok:#5BC08A; --okbg:#1F4633; --warn:#E8B24A; --warnbg:#4A3A14; --bad:#F2766D; --badbg:#4D2220;
+  --seq0:#0F2B28; --seq1:#7FE0D2; --hot0:#2E1C10; --hot1:#F5B27A; color-scheme:dark}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font:15.5px/1.55 var(--sans);font-stretch:100%}
+h1,h2,h3{font-stretch:78%;line-height:1.12;margin:0;text-wrap:balance}
+h1{font-size:clamp(1.9rem,4vw,2.9rem);font-weight:700;letter-spacing:-.01em}
+h2{font-size:1.55rem;font-weight:700}
+h3{font-size:1.05rem;font-weight:650;margin-top:.4rem}
+p{margin:0;max-width:72ch}
+code,.mono,td.n,.tile b{font-family:var(--mono);font-variant-numeric:tabular-nums}
+code{font-size:.86em}
+a{color:var(--c1)}
+:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:0 4rem;display:grid;grid-template-columns:200px minmax(0,1fr);gap:2.5rem}
+header.top{max-width:1240px;margin:0 auto;padding-inline:16px;padding-block:2.2rem 1.4rem;border-bottom:1px solid var(--rule);display:grid;gap:.7rem}
+.eyebrow{font:600 .74rem/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ink2)}
+.meta{display:flex;flex-wrap:wrap;gap:.3rem 1.4rem;color:var(--ink2);font-size:.88rem}
+nav.toc{position:sticky;top:calc(env(safe-area-inset-top,0px) + 1rem);align-self:start;padding-top:1.6rem;display:grid;gap:.15rem;font-size:.88rem}
+nav.toc a{color:var(--ink2);text-decoration:none;padding:.18rem 0 .18rem .7rem;border-left:2px solid var(--rule)}
+nav.toc a:hover{color:var(--ink);border-left-color:var(--c1)}
+main{min-width:0;display:grid;gap:3rem;padding-top:1.6rem}
+section{display:grid;gap:1rem;min-width:0;scroll-margin-top:1rem}
+.sec-h{display:flex;align-items:baseline;gap:.8rem;border-bottom:1px solid var(--rule);padding-bottom:.4rem}
+.sec-h span{font:600 .8rem var(--mono);color:var(--ink2)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--rule);border:1px solid var(--rule)}
+.tile{background:var(--panel);padding:.9rem 1rem;display:grid;gap:.15rem;align-content:start}
+.tile small{color:var(--ink2);font-size:.8rem}
+.tile b{font-size:1.55rem;font-weight:600;line-height:1.1}
+.tile b i{font-style:normal;font-size:.95rem;color:var(--ink2);margin-left:.2rem}
+.tile.warn{background:var(--warnbg)} .tile.bad{background:var(--badbg)}
+.pill{display:inline-block;font:600 .72rem/1.4 var(--mono);padding:.05rem .45rem;border-radius:3px;letter-spacing:.03em}
+.pill.ok{background:var(--okbg);color:var(--ok)} .pill.warn{background:var(--warnbg);color:var(--warn)} .pill.bad{background:var(--badbg);color:var(--bad)}
+.tbl{overflow-x:auto;border:1px solid var(--rule);background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:.42rem .7rem;border-bottom:1px solid var(--grid);vertical-align:top}
+th{font-weight:650;color:var(--ink2);font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;background:var(--paper)}
+td.n{text-align:right;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:1rem}
+figure{margin:0;background:var(--panel);border:1px solid var(--rule);display:grid;min-width:0}
+figure .chart{height:330px;width:100%}
+figure.tall .chart{height:440px}
+figure img{display:block;width:100%;height:auto;background:#fff}
+figcaption{padding:.55rem .8rem .7rem;font-size:.84rem;color:var(--ink2);border-top:1px solid var(--grid)}
+figcaption b{color:var(--ink);font-weight:650}
+.note{border-left:3px solid var(--warn);background:var(--warnbg);padding:.7rem .9rem;font-size:.92rem}
+.note.bad{border-left-color:var(--bad);background:var(--badbg)}
+.note.ok{border-left-color:var(--ok);background:var(--okbg)}
+.pending{display:grid;place-items:center;min-height:200px;padding:1.2rem;text-align:center;color:var(--ink2);font:600 .82rem/1.5 var(--mono);background:repeating-linear-gradient(135deg,var(--panel) 0 10px,var(--paper) 10px 20px)}
+.banner{border:1px solid var(--warn);background:var(--warnbg);padding:.7rem .9rem;font-size:.92rem;display:grid;gap:.25rem}
+.banner b{color:var(--warn)}
+.seg{display:flex;flex-wrap:wrap;gap:.3rem;padding:.6rem .8rem;border-bottom:1px solid var(--grid)}
+.seg button{font:inherit;font-size:.82rem;padding:.25rem .6rem;border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:3px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--c1);border-color:var(--c1);color:var(--panel)}
+ul.plain{margin:0;padding-left:1.1rem;display:grid;gap:.3rem;max-width:80ch}
+@media (max-width:900px){.wrap{grid-template-columns:1fr} nav.toc{display:none}}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+
+<header class="top">
+  <div class="eyebrow">Electromagnetic design report · FEMM 4.2 · 2D magnetostatic</div>
+  <h1>v7 Motor EM Report</h1>
+  <p>12-slot / 10-pole spoke-ferrite PMSM for an EV two-wheeler, 52 V battery, delta winding. Model calibrated to the Motor-CAD peak torque of 45 N·m. All figures below come from the FEMM solutions in <code>femm_em/</code>.</p>
+  {{status_banner}}
+  <div class="meta"><span>Report date {{date}}</span><span>Stack {{stack}} mm</span><span>Rated {{I_rms}} A rms line</span><span>Battery {{Vdc}} V, {{Pdc}} kW DC limit</span></div>
+</header>
+
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <a href="#summary">Summary</a><a href="#inputs">Inputs</a><a href="#fields">Field maps</a><a href="#noload">No load</a>
+  <a href="#load">Rated load</a><a href="#induct">Inductances</a><a href="#speed">Torque–speed</a><a href="#maps">Efficiency maps</a>
+  <a href="#demag">Demagnetisation</a><a href="#verify">Verification data</a><a href="#limits">Limitations</a><a href="#files">Files</a>
+</nav>
+<main>
+
+<section id="summary">
+  <div class="sec-h"><h2>Summary</h2><span>key results, calibrated model</span></div>
+  <div class="tiles">
+    <div class="tile"><small>Peak torque @ {{I_rms}} A rms</small><b>{{T_peak}}<i>N·m</i></b><small>current angle {{gopt}}°</small></div>
+    <div class="tile"><small>Base speed (11 kW DC limit)</small><b>{{n_base_dc}}<i>rpm</i></b><small>{{n_base_nodc}} rpm without the DC limit</small></div>
+    <div class="tile"><small>Max shaft power</small><b>{{P_max_dc}}<i>kW</i></b><small>held to 12 000 rpm (battery-limited)</small></div>
+    <div class="tile"><small>Peak motor efficiency</small><b>{{eff_peak}}<i>%</i></b><small>at {{eff_peak_at}}</small></div>
+    <div class="tile"><small>Back-EMF, line-line</small><b>{{E1k}}<i>V rms/krpm</i></b><small>ψm {{psim}} Wb-turn per path</small></div>
+    <div class="tile {{demag_cls}}"><small>Magnet demag at rated</small><b>{{H_min}}<i>kA/m</i></b><small>HcJ −{{HcJ}}; {{demag_area}} % of magnet area past HcJ</small></div>
+  </div>
+  <ul class="plain">
+    <li>The motor makes <b>{{T_peak}} N·m</b> at {{I_rms}} A rms with a torque ripple of {{ripple}} % and cogging of only {{cog}} N·m peak-to-peak.</li>
+    <li>On the 52 V battery the <b>11 kW DC limit</b>, not the motor, sets the speed range: full torque to about {{n_base_dc}} rpm, then about {{P_max_dc}} kW at the shaft up to 12 000 rpm.</li>
+    <li>Saliency Lq/Ld ≈ {{sal}} gives useful reluctance torque, so the best current angle is {{gopt}}° rather than 0°.</li>
+    <li><b>Action needed:</b> at rated current the field at the magnet tips beside the slot opening passes the ferrite HcJ (local irreversible demagnetisation). See <a href="#demag">Demagnetisation</a>.</li>
+  </ul>
+</section>
+
+<section id="inputs">
+  <div class="sec-h"><h2>Inputs and assumptions</h2><span>what the model was built from</span></div>
+  <div class="grid2">
+    <div class="tbl"><table>
+      <tr><th colspan="2">Geometry and winding</th></tr>
+      <tr><td>Stator</td><td>12 segmented teeth, exact v7 lamination profile (cad/ folder), bore Ø107.0 mm, OD Ø160 mm</td></tr>
+      <tr><td>Rotor</td><td>10-pole spoke, OD Ø{{rotor_od}} mm, shaft Ø{{shaft}} mm, magnet {{mag_depth}} mm radial, bridge {{bridge}} mm</td></tr>
+      <tr><td>Air gap</td><td class="n">0.50 mm</td></tr>
+      <tr><td>Stack length</td><td class="n">{{stack}} mm</td></tr>
+      <tr><td>Winding</td><td>Concentrated, delta, 2 parallel × 2 series per phase, 10 turns/coil, Ø2.90 mm wire</td></tr>
+      <tr><td>Rated current</td><td>{{I_rms}} A rms line = {{I_ph}} A rms phase = {{I_coil}} A rms per coil</td></tr>
+      <tr><td>Phase resistance</td><td>6.732 mΩ per coil (= per phase) at 100 °C</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th colspan="2">Materials and limits</th></tr>
+      <tr><td>Magnet</td><td>Sintered ferrite, Br 0.45 T @ 20 °C, −0.20 %/K, HcJ {{HcJ}} kA/m</td></tr>
+      <tr><td>Laminations</td><td>M235-35A, 0.35 mm, typical B-H curve</td></tr>
+      <tr><td>Battery</td><td>{{Vdc}} V, SVPWM, phase voltage limit {{Vmax}} V peak (95 %)</td></tr>
+      <tr><td>DC power limit</td><td>{{Pdc}} kW battery side, inverter efficiency {{eta_inv}} %</td></tr>
+      <tr><td>Copper loss</td><td>DC resistance at 100 °C</td></tr>
+      <tr><td>Iron loss</td><td>Steinmetz/Bertotti fit to M235-35A (2.35 W/kg @ 1.5 T 50 Hz, ≈17 W/kg @ 1 T 400 Hz) × 1.5 build factor; rotor +10 %</td></tr>
+      <tr><td>Mechanical loss</td><td>≈14 W @ 3000 rpm, ≈80 W @ 12 000 rpm</td></tr>
+    </table></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Calibration to Motor-CAD (motor_config.json)</th><th>Setting</th><th>Effect on peak torque</th></tr>
+    <tr><td>Magnet temperature (Br {{Br}} T)</td><td class="n">{{mag_temp}} °C</td><td class="n">−0.18 %/°C</td></tr>
+    <tr><td>Stacking factor</td><td class="n">{{stacking}}</td><td class="n">{{s_stack}} % (0.97 → 0.95)</td></tr>
+    <tr><td>Magnet recoil permeability μr</td><td class="n">{{mu}}</td><td class="n">{{s_mu}} % (1.05 → 1.10)</td></tr>
+    <tr><td>Result</td><td class="n">{{T_peak}} N·m</td><td class="n">uncalibrated 47.1 N·m · Motor-CAD 45 N·m</td></tr>
+  </table></div>
+</section>
+
+<section id="fields">
+  <div class="sec-h"><h2>Field maps</h2><span>|B| with flux lines, rotor at 0°</span></div>
+  <div class="grid2">
+    <figure><img src="{{img_B_noload}}" alt="Flux density map at no load"><figcaption><b>No load.</b> Magnet flux only. Spoke magnets concentrate flux into the pole pieces.</figcaption></figure>
+    <figure><img src="{{img_B_rated}}" alt="Flux density map at rated current"><figcaption><b>Rated {{I_rms}} A rms, γ {{gopt}}°.</b> Tooth-body |B| {{B_tooth}} T; only the tooth-tip corners and rotor bridges saturate (stator mean {{B_st_mean}} T).</figcaption></figure>
+    <figure><img src="{{img_B_noload_zoom}}" alt="Flux density zoom at no load"><figcaption><b>One pole pair, no load.</b> Rotor bridges (2 mm) run saturated, which is what limits magnet leakage.</figcaption></figure>
+    <figure><img src="{{img_B_rated_zoom}}" alt="Flux density zoom at rated current"><figcaption><b>One pole pair, rated.</b> Armature reaction shifts flux to one side of each tooth.</figcaption></figure>
+  </div>
+</section>
+
+<section id="noload">
+  <div class="sec-h"><h2>No-load performance</h2><span>magnets only</span></div>
+  <div class="grid2">
+    <figure><div class="chart" id="ch_emf"></div><figcaption><b>Back-EMF at 1000 rpm</b> per phase (= line-line in delta). Fundamental {{E1k}} V rms.</figcaption></figure>
+    <figure><div class="chart" id="ch_cog"></div><figcaption><b>Cogging torque</b> over one 6° cogging period: {{cog}} N·m peak-to-peak ({{cog_pct}} % of rated torque).</figcaption></figure>
+  </div>
+  <figure><div class="chart" id="ch_gap"></div><figcaption><b>Air-gap radial flux density</b> around the full machine, no load vs rated. Peak no-load {{Bgap}} T.</figcaption></figure>
+</section>
+
+<section id="load">
+  <div class="sec-h"><h2>Rated-load performance</h2><span>{{I_rms}} A rms</span></div>
+  <div class="grid2">
+    <figure><div class="chart" id="ch_gamma"></div><figcaption><b>Torque vs current angle.</b> Maximum at γ = {{gopt}}° (advance from the q-axis), reluctance torque from Lq &gt; Ld.</figcaption></figure>
+    <figure><div class="chart" id="ch_ripple"></div><figcaption><b>Torque over one electrical period</b> at the best angle: mean {{T_load}} N·m, ripple {{ripple}} % peak-to-peak.</figcaption></figure>
+    <figure><div class="chart" id="ch_ti"></div><figcaption><b>Torque vs line current</b> at the rated current angle. Kt {{kt}} N·m/A rms; saturation bends the curve above ~300 A.</figcaption></figure>
+    <div class="tbl"><table>
+      <tr><th>Rated operating point</th><th></th></tr>
+      <tr><td>Average torque</td><td class="n">{{T_load}} N·m</td></tr>
+      <tr><td>Torque ripple</td><td class="n">{{ripple}} %</td></tr>
+      <tr><td>Torque, magnets at 80 °C</td><td class="n">{{T_hot}} N·m</td></tr>
+      <tr><td>Stator tooth / yoke |B| (sample points)</td><td class="n">{{B_tooth}} / {{B_yoke}} T</td></tr>
+      <tr><td>Copper loss (100 °C)</td><td class="n">{{Pcu}} W</td></tr>
+      <tr><td>Current density in wire</td><td class="n">15.8 A/mm² rms</td></tr>
+    </table></div>
+  </div>
+</section>
+
+<section id="induct">
+  <div class="sec-h"><h2>Flux linkage and inductances</h2><span>d-q map, 25 current points × 3 rotor positions</span></div>
+  <div class="grid2">
+    <figure><div class="chart" id="ch_psid"></div><figcaption><b>ψd vs id</b> (per parallel path, peak). Slope = Ld; ψd crosses zero near id ≈ −{{ich_path}} A: the magnet flux can be fully cancelled.</figcaption></figure>
+    <figure><div class="chart" id="ch_psiq"></div><figcaption><b>ψq vs iq.</b> Lq falls with load as the q-axis path saturates.</figcaption></figure>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Quantity</th><th>Per parallel path</th><th>Per delta phase</th></tr>
+    <tr><td>Magnet flux linkage ψm</td><td class="n">{{psim}} Wb-turn</td><td class="n">—</td></tr>
+    <tr><td>Ld, light load</td><td class="n">{{Ld0}} µH</td><td class="n">{{Ld0p}} µH</td></tr>
+    <tr><td>Lq, light load</td><td class="n">{{Lq0}} µH</td><td class="n">{{Lq0p}} µH</td></tr>
+    <tr><td>Ld, near rated</td><td class="n">{{Ldr}} µH</td><td class="n">{{Ldrp}} µH</td></tr>
+    <tr><td>Lq, near rated</td><td class="n">{{Lqr}} µH</td><td class="n">{{Lqrp}} µH</td></tr>
+    <tr><td>Characteristic current ψm/Ld</td><td class="n">{{ich_path}} A peak</td><td class="n">{{ich}} A rms line</td></tr>
+  </table></div>
+</section>
+
+<section id="speed">
+  <div class="sec-h"><h2>Torque–speed capability</h2><span>{{Vdc}} V battery, winding at 100 °C</span></div>
+  <div class="grid2">
+    <figure><div class="chart" id="ch_ts"></div><figcaption><b>Maximum shaft torque vs speed.</b> Solid: {{I_rms}} A rms with the {{Pdc}} kW DC limit. Dashed: 180 A rms. Dotted: {{I_rms}} A rms with no DC limit.</figcaption></figure>
+    <figure><div class="chart" id="ch_ps"></div><figcaption><b>Shaft power vs speed</b>, same three cases. The DC limit flattens power at ≈{{P_max_dc}} kW from {{n_base_dc}} rpm.</figcaption></figure>
+    <figure><div class="chart" id="ch_is"></div><figcaption><b>Line current along the {{I_rms}} A + {{Pdc}} kW envelope.</b> Current drops once the battery limit takes over, so copper loss falls from {{Pcu}} W.</figcaption></figure>
+    <div class="tbl"><table id="tbl_ts"><tr><th>rpm</th><th>Torque N·m</th><th>Shaft kW</th><th>DC kW</th><th>I A rms</th><th>Cu loss W</th></tr></table></div>
+  </div>
+</section>
+
+<section id="maps">
+  <div class="sec-h"><h2>Efficiency and loss maps</h2><span>minimum-loss current at every point inside the envelope</span></div>
+  <figure class="tall">
+    <div class="seg" role="group" aria-label="Map shown">
+      <button data-m="eff" aria-pressed="true">Motor efficiency</button><button data-m="eff_sys">System efficiency</button>
+      <button data-m="loss">Total loss</button><button data-m="pcu">Copper loss</button><button data-m="pfe">Iron loss</button>
+      <button data-m="I_rms">Line current</button><button data-m="pf">Power factor</button><button data-m="P_dc_kW">Battery power</button>
+    </div>
+    <div class="chart" id="ch_map"></div>
+    <figcaption id="map_cap"><b>Motor efficiency.</b> Peak {{eff_peak}} % at {{eff_peak_at}}. The heavy line is the operating boundary including all losses and the {{Pdc}} kW DC limit.</figcaption>
+  </figure>
+  <p class="note">Iron loss is an estimate from the no-load flux distribution scaled with the operating flux and a typical M235-35A loss curve. Treat efficiency above ~6000 rpm as ±1–2 %. AC copper (proximity) loss in the Ø2.9 mm wire is not included and will lower high-speed efficiency.</p>
+</section>
+
+<section id="demag">
+  <div class="sec-h"><h2>Magnet demagnetisation check</h2><span>H along the magnetisation direction</span></div>
+  <div class="grid2">
+    <figure><img src="{{img_demag}}" alt="Demagnetising field in the magnets at rated current"><figcaption><b>Rated current, rotor 0°.</b> Red = demagnetising field. The outer corners beside the slot opening go furthest negative.</figcaption></figure>
+    <div style="display:grid;gap:1rem;align-content:start">
+      <div class="tbl"><table>
+        <tr><th>Case</th><th>Most negative H (kA/m)</th><th>vs HcJ −{{HcJ}}</th></tr>
+        <tr><td>No load</td><td class="n">{{H_nl}}</td><td><span class="pill ok">OK</span></td></tr>
+        <tr><td>Rated, γ {{gopt}}°</td><td class="n">{{H_min}}</td><td><span class="pill {{demag_pill}}">{{demag_txt}}</span></td></tr>
+        <tr><td>Rated, pure −d (γ 90°)</td><td class="n">{{H_90}}</td><td><span class="pill {{demag90_pill}}">{{demag90_txt}}</span></td></tr>
+        <tr><td>Magnet area past HcJ (rated)</td><td class="n">{{demag_area}} %</td><td></td></tr>
+        <tr><td>Magnet area past 80 % of HcJ</td><td class="n">{{demag_area80}} %</td><td></td></tr>
+      </table></div>
+      <p class="note bad">Local irreversible demagnetisation is predicted at the magnet tips at rated current. Ferrite HcJ also <i>falls</i> in the cold (≈ −0.2 to −0.3 %/K), so a cold start at full current is the worst case. Options: a higher-HcJ ferrite grade, thicker pole-piece lips over the magnet top, a smaller magnet opening, or a lower peak current.</p>
+    </div>
+  </div>
+</section>
+
+<section id="verify">
+  <div class="sec-h"><h2>Verification data</h2><span>every material value and adjustable setting, for checking in Motor-CAD</span></div>
+  <p>All values below are the ones FEMM used for this report. The last column of the settings table says where each one lives, so a change can be made and the report rebuilt.</p>
+  <div class="grid2">
+    <div class="tbl"><table><tr><th colspan="2">Magnet: sintered ferrite</th></tr>{{tbl_magnet}}</table></div>
+    <div class="tbl"><table><tr><th colspan="2">Lamination steel: M235-35A</th></tr>{{tbl_steel}}</table></div>
+  </div>
+  <div class="grid2">
+    <figure><div class="chart" id="ch_bh"></div><figcaption><b>M235-35A B-H curve used by FEMM</b> (DC magnetisation, solid steel; FEMM applies the {{stacking}} stacking factor). Compare with the Motor-CAD library curve.</figcaption></figure>
+    <div class="tbl"><table><tr><th>H (A/m)</th><th>B (T)</th><th>μr</th></tr>{{tbl_bh}}</table></div>
+  </div>
+  <div class="tbl"><table><tr><th>Winding resistance (DC)</th><th>20 °C</th><th>100 °C</th><th>150 °C</th><th>180 °C</th></tr>{{tbl_res}}</table></div>
+  <div class="tbl"><table><tr><th colspan="2">Copper and winding data</th></tr>{{tbl_copper}}</table></div>
+  <div class="tbl"><table><tr><th>Adjustable setting</th><th>Value used</th><th>Effect</th><th>Where to change</th></tr>{{tbl_knobs}}</table></div>
+</section>
+
+<section id="limits">
+  <div class="sec-h"><h2>Limitations</h2><span>what a 2D magnetostatic model leaves out</span></div>
+  <ul class="plain">
+    <li><b>End-winding leakage inductance</b> (end turns ≈ ⅓ of the wire length) is not in Ld/Lq: real base speed will be a few hundred rpm lower.</li>
+    <li><b>3D end effects</b> of the ferrite spoke rotor (axial leakage) typically cost 5–15 % torque. The calibration to Motor-CAD absorbs part of this only if Motor-CAD included it.</li>
+    <li><b>Iron loss</b> is estimated, not solved per element over time; AC copper and magnet eddy losses are omitted.</li>
+    <li><b>Thermal</b>: 360 A rms is ≈15.8 A/mm² in the wire, a short-time rating. Continuous capability needs a thermal model.</li>
+    <li><b>Mechanical</b>: rotor bridge stress at 12 000 rpm is not checked.</li>
+  </ul>
+</section>
+
+<section id="files">
+  <div class="sec-h"><h2>Files</h2><span>C:\Users\vibhe\Downloads\OUTPUT\OUTPUT\femm_em\</span></div>
+  <div class="tbl"><table>
+    <tr><th>File</th><th>Contents</th></tr>
+    <tr><td><code>README.md</code></td><td>How to rerun everything, inputs, run order</td></tr>
+    <tr><td><code>motor_config.json</code></td><td>Calibration knobs (magnet temperature, stacking, μr)</td></tr>
+    <tr><td><code>femm_motor.py</code> → <code>results.json</code>, <code>summary.txt</code></td><td>No-load, cogging, current angle, ripple, torque vs current, demag</td></tr>
+    <tr><td><code>dq_study.py</code> → <code>dq.json</code>, <code>dq_summary.txt</code></td><td>d-q flux map, inductances, torque–speed envelopes</td></tr>
+    <tr><td><code>eff_map.py</code> → <code>eff.json</code></td><td>Efficiency, loss, current, power-factor maps</td></tr>
+    <tr><td><code>field_maps.py</code> → <code>field_*.fem/.ans</code></td><td>Field pictures; open the .ans files in FEMM</td></tr>
+    <tr><td><code>build_report.py</code></td><td>Rebuilds this report from the result files</td></tr>
+  </table></div>
+</section>
+
+</main>
+</div>
+
+<script>
+const D = /*__DATA__*/;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function base(xt, yt, extra){
+  return Object.assign({
+    paper_bgcolor: css('--panel'), plot_bgcolor: css('--panel'),
+    font: {family: 'Archivo, system-ui, sans-serif', size: 12, color: css('--ink2')},
+    margin: {l: 58, r: 16, t: 14, b: 46}, hovermode: 'x unified',
+    hoverlabel: {bgcolor: css('--panel'), bordercolor: css('--rule'), font: {color: css('--ink'), family: 'JetBrains Mono, monospace', size: 11}},
+    legend: {orientation: 'h', y: 1.0, yanchor: 'bottom', x: 0, font: {color: css('--ink'), size: 11}},
+    xaxis: {title: {text: xt}, gridcolor: css('--grid'), zerolinecolor: css('--rule'), linecolor: css('--rule'), tickfont: {family: 'JetBrains Mono, monospace', size: 10}},
+    yaxis: {title: {text: yt}, gridcolor: css('--grid'), zerolinecolor: css('--rule'), linecolor: css('--rule'), tickfont: {family: 'JetBrains Mono, monospace', size: 10}},
+  }, extra || {});
+}
+const CFG = {displayModeBar: false, responsive: true};
+const PEND = 'Pending: this analysis is still running and will be added automatically.';
+function plot(id, ok, traces, layout){
+  const el = document.getElementById(id);
+  if (!ok) { el.className = 'pending'; el.textContent = PEND; return; }
+  Plotly.react(el, traces(), layout(), CFG);
+}
+const C = () => [css('--c1'), css('--c2'), css('--c3'), css('--c4')];
+const line = (x, y, name, color, dash, extra) => Object.assign({x, y, name, type: 'scatter', mode: 'lines', line: {color, width: 2, dash: dash || 'solid'}}, extra || {});
+function seq(n){ // single-hue ramp (light -> dark) for ordered levels
+  const a = css('--seq0'), b = css('--seq1'), h = s => s.match(/\w\w/g).map(v => parseInt(v, 16));
+  const A = h(a.slice(1)), B = h(b.slice(1));
+  return Array.from({length: n}, (_, i) => { const t = n === 1 ? 1 : 0.35 + 0.65 * i / (n - 1); return 'rgb(' + A.map((v, k) => Math.round(v + (B[k] - v) * t)).join(',') + ')'; });
+}
+let MAP = 'eff';
+const MAPS = {
+  eff: ['Motor efficiency', '%', 'seq', [70, 96]], eff_sys: ['System efficiency (incl. inverter)', '%', 'seq', [68, 94]],
+  loss: ['Total motor loss', 'W', 'hot'], pcu: ['Copper loss', 'W', 'hot'], pfe: ['Iron loss', 'W', 'hot'],
+  I_rms: ['Line current', 'A rms', 'hot'], pf: ['Power factor', '', 'seq', [0.5, 1]], P_dc_kW: ['Battery (DC) power', 'kW', 'hot'],
+};
+function draw(){
+  const c = C(), E = D.emf, ts = D.ts;
+  plot('ch_emf', E, () => ['R', 'Y', 'B'].map((p, i) => line(E.theta_e, E[p], 'Phase ' + p, c[i])), () => base('electrical angle (°)', 'V'));
+  plot('ch_cog', D.cog, () => [line(D.cog.theta, D.cog.T, 'Cogging', c[0], null, {mode: 'lines+markers', marker: {size: 6}})], () => base('rotor angle (° mech)', 'N·m', {showlegend: false}));
+  plot('ch_gap', D.gap, () => [line(D.gap.ang, D.gap.nl, 'No load', c[0], null, {line: {color: c[0], width: 1.2}}), line(D.gap.ang, D.gap.rated, 'Rated', c[1], null, {line: {color: c[1], width: 1.2}})], () => base('position (° mech)', 'B radial (T)'));
+  plot('ch_gamma', D.gamma, () => [line(D.gamma.g, D.gamma.T, 'Torque', c[0], null, {mode: 'lines+markers', marker: {size: 8}})], () => base('current angle γ (°, + = advance)', 'N·m', {showlegend: false}));
+  plot('ch_ripple', D.ripple, () => [line(D.ripple.theta, D.ripple.T, 'Torque', c[0]), line([D.ripple.theta[0], D.ripple.theta.at(-1)], [D.ripple.mean, D.ripple.mean], 'Mean', css('--ink2'), 'dot', {hoverinfo: 'skip'})], () => base('rotor angle (° mech)', 'N·m', {showlegend: false}));
+  plot('ch_ti', D.ti, () => [line(D.ti.I, D.ti.T, 'Magnets 35 °C', c[0], null, {mode: 'lines+markers', marker: {size: 8}}),
+    {x: [D.ti.I_rated], y: [D.ti.T_hot], name: 'Magnets 80 °C', type: 'scatter', mode: 'markers', marker: {size: 10, color: c[1], symbol: 'diamond'}}], () => base('line current (A rms)', 'N·m'));
+  const s5 = seq(D.dq.iq.length), s5b = seq(D.dq.id.length);
+  Plotly.react('ch_psid', D.dq.iq.map((q, j) => line(D.dq.id, D.dq.psid.map(r => r[j] * 1e3), 'iq ' + q.toFixed(0) + ' A', s5[j], null, {mode: 'lines+markers', marker: {size: 7}})), base('id per path (A peak)', 'ψd (mWb-turn)', {hovermode: 'closest'}), CFG);
+  Plotly.react('ch_psiq', D.dq.id.map((d, i) => line(D.dq.iq, D.dq.psiq[i].map(v => v * 1e3), 'id ' + d.toFixed(0) + ' A', s5b[D.dq.id.length - 1 - i], null, {mode: 'lines+markers', marker: {size: 7}})), base('iq per path (A peak)', 'ψq (mWb-turn)', {hovermode: 'closest'}), CFG);
+  const cases = [['dc360', '360 A + 11 kW DC', 'solid'], ['dc180', '180 A + 11 kW DC', 'dash'], ['nodc', '360 A, no DC limit', 'dot']];
+  Plotly.react('ch_ts', cases.map(([k, n, d], i) => line(ts[k].rpm, ts[k].T, n, [c[0], c[2], c[3]][i], d)), base('speed (rpm)', 'shaft torque (N·m)'), CFG);
+  Plotly.react('ch_ps', cases.map(([k, n, d], i) => line(ts[k].rpm, ts[k].P, n, [c[0], c[2], c[3]][i], d)), base('speed (rpm)', 'shaft power (kW)'), CFG);
+  Plotly.react('ch_is', [line(ts.dc360.rpm, ts.dc360.I, 'Line current', c[0])], base('speed (rpm)', 'A rms', {showlegend: false}), CFG);
+  plot('ch_bh', D.bh, () => [line(D.bh.H, D.bh.B, 'M235-35A', c[0], null, {mode: 'lines+markers', marker: {size: 7}})],
+       () => base('H (A/m, log scale)', 'B (T)', {showlegend: false, hovermode: 'closest', xaxis: Object.assign(base().xaxis, {type: 'log', title: {text: 'H (A/m, log scale)'}})}));
+  drawMap();
+}
+function drawMap(){
+  if (!D.maps) { const el = document.getElementById('ch_map'); el.className = 'pending'; el.textContent = PEND; document.querySelector('.seg').hidden = true; return; }
+  const m = D.maps, [name, unit, kind, range] = MAPS[MAP];
+  const cs = kind === 'seq' ? [[0, css('--seq0')], [1, css('--seq1')]] : [[0, css('--hot0')], [1, css('--hot1')]];
+  const z = m[MAP];
+  const tr = {type: 'contour', x: m.speeds, y: m.torques, z, colorscale: cs, connectgaps: false,
+    contours: {coloring: 'heatmap', showlabels: true, labelfont: {size: 10, color: css('--ink')}},
+    line: {width: 0.6, color: css('--rule')}, colorbar: {title: {text: unit, side: 'right'}, thickness: 12, outlinewidth: 0, tickfont: {family: 'JetBrains Mono, monospace', size: 10}},
+    hovertemplate: '%{x} rpm · %{y} N·m<br>' + name + ': %{z:.3~f} ' + unit + '<extra></extra>'};
+  if (range) { tr.zmin = range[0]; tr.zmax = range[1]; tr.contours.start = range[0]; tr.contours.end = range[1]; tr.contours.size = (range[1] - range[0]) / (MAP === 'pf' ? 10 : 13); }
+  const env = line(m.env_rpm, m.env_T, 'Operating boundary', css('--ink'), null, {line: {color: css('--ink'), width: 2.5}, hovertemplate: '%{x} rpm · max %{y:.1f} N·m<extra></extra>'});
+  Plotly.react('ch_map', [tr, env], base('speed (rpm)', 'shaft torque (N·m)', {hovermode: 'closest', showlegend: false}), CFG);
+  const cap = MAP === 'eff' ? document.getElementById('map_cap').dataset.eff : '<b>' + name + (unit ? ' (' + unit + ')' : '') + '.</b> Value at the minimum-loss current for each speed and torque; heavy line = operating boundary.';
+  document.getElementById('map_cap').innerHTML = cap;
+}
+document.getElementById('map_cap').dataset.eff = document.getElementById('map_cap').innerHTML;
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => {
+  MAP = b.dataset.m; document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', x === b)); drawMap();
+}));
+const tb = document.getElementById('tbl_ts');
+D.ts.table.forEach(r => { const tr = tb.insertRow(); r.forEach(v => { const td = tr.insertCell(); td.className = 'n'; td.textContent = v; }); });
+draw();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', draw);
+new MutationObserver(draw).observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+</script>

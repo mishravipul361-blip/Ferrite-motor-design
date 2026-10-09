@@ -1,0 +1,34 @@
+v7 12s/10p spoke ferrite motor - FEMM 2D magnetostatic, stack 65 mm
+Ferrite Br 0.44 T (mu_r 1.10, HcJ 340 kA/m)   steel M235-35A 0.35 mm, stacking 0.95
+Current 360 A rms line (delta) = 207.8 A rms phase = 103.9 A rms per coil; peak line 509 A
+
+NO LOAD
+  flux linkage per path (fundamental, peak)   0.0211 Wb-turn
+  back-EMF line-line @1000 rpm                 7.80 V rms  (11.03 V peak)
+  cogging torque                               0.075 N.m pk-pk
+  air-gap B (radial) peak                      0.807 T
+
+RATED 360 A rms
+  best current angle gamma (MTPA)              23.2 deg (advance from q-axis)
+  average torque                               44.96 N.m
+  torque ripple                                5.0 % pk-pk  (43.94..46.17 N.m)
+  torque constant Kt                           0.1249 N.m/A rms line
+  torque with magnets at 80 C (Br 0.396)        41.20 N.m
+  tooth B max / yoke B max                     1.61 / 1.50 T
+  copper loss (100 C, DC)                      872 W
+  base speed / torque-speed                    see dq_summary.txt
+
+MAGNET DEMAGNETISATION (min H along magnetisation, min B along magnetisation)
+  noload         H    -179 kA/m (margin to -HcJ   161 kA/m)   B 0.190 T
+  rated          H    -664 kA/m (margin to -HcJ  -324 kA/m)   B -0.482 T
+  demag_gamma90  H    -495 kA/m (margin to -HcJ  -155 kA/m)   B -0.248 T
+
+TORQUE vs CURRENT (gamma fixed at rated MTPA)
+     90 A rms   11.72 N.m
+    180 A rms   23.92 N.m
+    270 A rms   35.24 N.m
+    360 A rms   44.96 N.m
+    450 A rms   52.91 N.m
+
+Not in a 2D model: end-winding leakage (raises voltage, lowers base speed), axial end effects of the
+ferrite spoke rotor (3D torque typically 5-15 % lower), iron/magnet/AC copper losses.

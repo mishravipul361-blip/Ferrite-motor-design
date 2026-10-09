@@ -1,0 +1,10 @@
+# Large binaries via Git LFS (the 111 MB busbar video exceeds GitHub's 100 MB file limit)
+*.mp4 filter=lfs diff=lfs merge=lfs -text
+*.SLDPRT filter=lfs diff=lfs merge=lfs -text
+*.SLDASM filter=lfs diff=lfs merge=lfs -text
+*.step filter=lfs diff=lfs merge=lfs -text
+*.stp filter=lfs diff=lfs merge=lfs -text
+*.ans filter=lfs diff=lfs merge=lfs -text
+
+# Windows batch files need CRLF
+*.bat text eol=crlf

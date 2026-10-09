@@ -1,0 +1,15 @@
+{
+"default": "Constant-width rings: a wide inner track and a narrow outer track. The thin outer swap piece at upper left is the hottest track part (11 A/mm²).",
+"g_bal": "A 3.75 mm plate: the busy sections step outward into the band between the rings, the lightly loaded ends are trimmed narrow, so the track currents even out at 10–11 A/mm². Widened parts show their area as a range (normal – widened).",
+"g_loss": "A full 4 mm plate with stepped, widened busy sections (including the lower-left outer arc) and a large, cool swap piece (3.7 A/mm²).",
+"g_height": "The thinnest balanced plate (3 mm): wide stepped arcs and a fat swap piece, with only one thin inner arc (T7–T8) running near the limit.",
+"g_mass": "Least copper: nearly every piece is slimmed until it runs at 11–12 A/mm², so the plan glows an almost uniform hot colour; only the arcs the imbalance limit needs are widened.",
+"g_imb": "The stepped, widened 4 mm layout, with terminal L2 moved lowest (29°) to even out the two paths of each phase.",
+"g_close": "The same stepped, widened copper as Lowest imbalance, with the terminals packed into the tightest cluster the lug pitch allows (30.5°).",
+"v_span60": "With a 60° terminal spread the terminals move apart and a short narrow stub joins the moved terminal to its ring; the rest of the stepped, widened layout is unchanged.",
+"v_span90": "With a 90° spread the layout changes: ring L2 rides the inner track, L3 the outer, and L1 swaps tracks; both rings are widened, so the currents stay low.",
+"v_j15": "Least copper with a 15 A/mm² allowance: thinner narrow pieces than the 12 A/mm² design, peaking at 12.4 A/mm². The higher limit is never reached because the 4 % imbalance limit binds first.",
+"v_pi6": "Each ring tapers from thin far ends (8.9 mm²) to wide sections at the terminals (23 mm²), so almost every label reads 11–12 A/mm²; no widening is needed because 6 % imbalance is allowed.",
+"v_bal": "The thin, stepped plate of Lowest height plus three welds where balancing resistance is added (red rings on the plan with their values, red markers in 3D).",
+"v7": "The as-built four-level stacked design, shown in phase/path colours without current-density labels, for shape comparison only. On one plane its rings would overlap (red), which is why v7 stacks them."
+}

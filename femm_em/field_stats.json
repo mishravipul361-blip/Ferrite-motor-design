@@ -1,0 +1,15 @@
+{
+ "noload": {
+  "B_stator_p99": 1.5140326936822237,
+  "B_stator_mean": 0.7662694918476357
+ },
+ "rated": {
+  "B_stator_p99": 2.357951134639886,
+  "B_stator_mean": 0.9837611434260058
+ },
+ "demag_rated": {
+  "H_min_kA_m": -664.1907555853536,
+  "area_beyond_HcJ_pct": 0.18302975176383093,
+  "area_beyond_80pct_HcJ_pct": 0.7943845078795831
+ }
+}

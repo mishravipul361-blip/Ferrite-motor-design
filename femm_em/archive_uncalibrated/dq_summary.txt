@@ -1,0 +1,62 @@
+D-Q MAP  (path values, peak; phase current = 2 x path current)
+  magnet flux linkage psi_m            0.0220 Wb-turn
+  Ld per path, unsat (id=-37.5 A)      220.4 uH    -> per delta phase 110.2 uH
+  Lq per path, unsat (iq=37.5 A)       304.3 uH    -> per delta phase 152.2 uH
+  at load (id -75, iq 112.5, ~rated):    Ld 185.2 uH, Lq 226.1 uH per path (delta phase 92.6 / 113.0 uH), Lq/Ld 1.22
+  characteristic current psi_m/Ld      100 A path peak = 244 A rms line  (current limit 360 A rms)
+  d-q torque formula vs FEMM torque    max diff 3.2 N.m
+
+TORQUE-SPEED ENVELOPE  360 A rms + 11 kW DC, 52 V (phase peak 49.4 V), R at 100 C, inverter eff 0.97
+     rpm    T N.m  shaft kW  DC kW  Cu loss W  I A rms    id    iq   V peak
+       0    48.17     0.00    0.90       871      360    -69   130     2.0
+    1000    48.17     5.04    6.10       871      360    -69   130    16.9
+    2000    47.03     9.85   11.00       819      349    -61   129    32.4
+    3000    32.85    10.32   11.00       349      228    -29    88    43.6
+    4000    24.97    10.46   11.00       209      176    -36    62    48.3
+    5000    19.76    10.34   10.89       215      179    -55    48    46.1
+    6000    16.64    10.46   11.00       211      177    -60    40    48.2
+    7000    13.97    10.24   10.78       218      180    -65    34    48.8
+    8000    12.34    10.34   10.90       235      187    -70    31    49.3
+    9000    10.87    10.25   10.99       417      249    -98    27    35.2
+   10000     9.81    10.27   10.99       383      239    -94    24    37.5
+   11000     8.88    10.23   10.98       417      249    -99    22    35.1
+   12000     8.22    10.33   10.99       332      222    -88    21    43.8
+  base speed (torque < 98 % of zero-speed) ~2000 rpm, peak power 10.48 kW, max speed 12000 rpm
+
+TORQUE-SPEED ENVELOPE  180 A rms + 11 kW DC, 52 V (phase peak 49.4 V), R at 100 C, inverter eff 0.97
+     rpm    T N.m  shaft kW  DC kW  Cu loss W  I A rms    id    iq   V peak
+       0    26.61     0.00    0.22       218      180    -21    70     1.0
+    1000    26.61     2.79    3.10       218      180    -21    70    14.3
+    2000    26.61     5.57    5.97       218      180    -21    70    27.8
+    3000    26.61     8.36    8.84       218      180    -21    70    41.3
+    4000    24.97    10.46   11.00       209      176    -36    62    48.3
+    5000    20.00    10.47   11.00       199      172    -51    48    48.0
+    6000    16.65    10.46   11.00       208      176    -59    40    48.5
+    7000    13.98    10.25   10.79       214      178    -64    34    49.1
+    8000    11.59     9.71   10.23       217      179    -67    29    49.3
+    9000     9.50     8.95    9.45       216      179    -69    24    49.3
+   10000     7.45     7.80    8.26       215      179    -70    19    48.9
+   11000     5.94     6.84    7.27       217      179    -72    15    48.8
+   12000     4.46     5.60    6.00       216      179    -72    12    49.1
+  base speed (torque < 98 % of zero-speed) ~3850 rpm, peak power 10.48 kW, max speed 12000 rpm
+
+TORQUE-SPEED ENVELOPE  360 A rms, no DC limit, 52 V (phase peak 49.4 V), R at 100 C, inverter eff 0.97
+     rpm    T N.m  shaft kW  DC kW  Cu loss W  I A rms    id    iq   V peak
+       0    48.17     0.00    0.90       871      360    -69   130     2.0
+    1000    48.17     5.04    6.10       871      360    -69   130    16.9
+    2000    48.17    10.09   11.30       871      360    -69   130    32.2
+    3000    48.17    15.13   16.50       871      360    -69   130    47.6
+    4000    40.35    16.90   18.32       868      359   -109    98    49.3
+    5000    30.59    16.02   17.23       695      321   -108    75    49.4
+    6000    25.01    15.71   16.83       610      301   -107    61    49.4
+    7000    21.47    15.74   16.83       592      297   -109    53    49.4
+    8000    19.07    15.97   17.25       755      335   -129    47    49.3
+    9000    17.15    16.16   17.40       713      325   -126    42    49.3
+   10000    15.31    16.03   17.30       748      333   -131    37    49.4
+   11000    14.25    16.42   17.61       666      314   -124    34    49.3
+   12000    13.19    16.57   17.70       599      298   -118    32    49.4
+  base speed (torque < 98 % of zero-speed) ~3400 rpm, peak power 17.01 kW, max speed 12000 rpm
+
+Calibration (motor_config.json): {'magnet_temp_C': 20.0, 'stacking': 0.97, 'mu_mag': 1.05}
+Not included: end-winding leakage inductance (adds to Ld and Lq -> lower base speed),
+iron and mechanical losses (shaft power is a little lower, DC power a little higher), 3D magnet end leakage.

@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Adaptive spoke rotor geometry — Adaptive_temp_24_09.py</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..750&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#E9EDEF; --panel:#F7F9FA; --ink:#15212A; --ink2:#4A5963; --rule:#C6D0D6;
+  --steel:#A7B4BC; --steel-edge:#33434E; --air:#FFFFFF;
+  --magn:#C23A30; --mags:#2D5C9F; --dim:#A85E00; --hl:#0A7C88;
+  --ok:#2E7D4F; --bad:#B3261E; --warn:#9A6400; --okbg:#CFE8D9; --glue:#E7CF78;
+  --sans:"Archivo",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --paper:#10171C; --panel:#162027; --ink:#E2E8EB; --ink2:#9AA9B2; --rule:#2A3842;
+    --steel:#5A6A75; --steel-edge:#C3CFD6; --air:#0B1115;
+    --magn:#E0685E; --mags:#6B96D6; --dim:#F0A43C; --hl:#3CC6D2;
+    --ok:#5BC08A; --bad:#F2766D; --warn:#E8B24A; --okbg:#1F4633; --glue:#8A7430;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#10171C; --panel:#162027; --ink:#E2E8EB; --ink2:#9AA9B2; --rule:#2A3842;
+  --steel:#5A6A75; --steel-edge:#C3CFD6; --air:#0B1115;
+  --magn:#E0685E; --mags:#6B96D6; --dim:#F0A43C; --hl:#3CC6D2;
+  --ok:#5BC08A; --bad:#F2766D; --warn:#E8B24A; --okbg:#1F4633; --glue:#8A7430;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font:15px/1.5 var(--sans);font-stretch:100%}
+code,.mono{font-family:var(--mono);font-size:.86em}
+h1,h2,h3{font-stretch:78%;line-height:1.15;margin:0}
+a{color:var(--hl)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--hl);outline-offset:2px}
+
+/* ---------- header ---------- */
+.top{display:flex;flex-wrap:wrap;gap:.5rem 2rem;align-items:end;justify-content:space-between;
+  max-width:1560px;margin:0 auto;padding:1.1rem 1.25rem .8rem;border-bottom:1px solid var(--rule)}
+.top h1{font-size:clamp(1.5rem,2.6vw,2.2rem);font-weight:700;letter-spacing:-.01em}
+.top p{margin:.25rem 0 0;color:var(--ink2);max-width:62ch}
+.top nav{display:flex;flex-wrap:wrap;gap:.2rem .9rem;font-stretch:85%}
+.top nav a{text-decoration:none;color:var(--ink2)}
+.top nav a:hover{color:var(--hl)}
+
+/* ---------- explorer grid ---------- */
+.app{display:grid;max-width:1560px;margin:0 auto;gap:1px;background:var(--rule);
+  grid-template-columns:330px 1fr 1fr;grid-template-areas:"ctl sec full" "ctl out out"}
+.app>*{background:var(--panel);margin:0;min-width:0}
+.ctl{grid-area:ctl;align-self:start;position:sticky;top:0;max-height:100dvh;overflow:auto;padding:.4rem 1rem 1.5rem}
+.sec{grid-area:sec}.full{grid-area:full}.out{grid-area:out}
+@media (max-width:1300px){
+  .app{grid-template-columns:320px 1fr;grid-template-areas:"ctl sec" "ctl full" "ctl out"}
+}
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;grid-template-areas:"sec" "ctl" "full" "out"}
+  .ctl{position:static;max-height:none}
+  .sec{position:sticky;top:0;z-index:5;box-shadow:0 1px 0 var(--rule)}
+  .sec svg{height:40svh}
+  .sec figcaption{display:none}
+}
+
+/* ---------- controls ---------- */
+.ctl h3{font-size:.95rem;font-weight:650;margin:1.1rem 0 .3rem;color:var(--ink2)}
+.prm{padding:.35rem 0 .45rem;border-bottom:1px solid var(--rule)}
+.prm-h{display:flex;justify-content:space-between;align-items:center;gap:.5rem}
+.prm-h label code{font-size:.84rem;font-weight:600}
+.num{display:flex;align-items:center;gap:.25rem}
+.num input{width:5.2rem;text-align:right;padding:.12rem .3rem;border:1px solid var(--rule);border-radius:3px;background:var(--paper);font-family:var(--mono);font-size:.82rem}
+.num i{font-style:normal;color:var(--ink2);font-size:.8rem;width:1.3rem}
+.trk{position:relative;height:22px;margin:.1rem 0 0}
+.trk::before{content:"";position:absolute;left:7px;right:7px;top:10px;height:2px;background:var(--rule)}
+.band{position:absolute;left:7px;right:7px;top:8px;height:6px}
+.band span{position:absolute;top:0;height:6px;background:var(--ok);opacity:.55;border-radius:1px}
+.trk input[type=range]{position:absolute;inset:0;width:100%;margin:0;background:transparent;-webkit-appearance:none;appearance:none;height:22px}
+.trk input[type=range]::-webkit-slider-runnable-track{background:transparent;height:22px}
+.trk input[type=range]::-moz-range-track{background:transparent}
+.trk input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:4px;border-radius:50%;background:var(--ink);border:2px solid var(--panel)}
+.trk input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--ink);border:2px solid var(--panel)}
+.prm.bad .trk input::-webkit-slider-thumb{background:var(--bad)}
+.prm.bad .trk input::-moz-range-thumb{background:var(--bad)}
+.hint{margin:.1rem 0 0;font-size:.8rem;color:var(--ink2);line-height:1.35}
+.fr{margin:.1rem 0 0;font-size:.76rem;font-family:var(--mono);color:var(--ok)}
+.fr.none{color:var(--bad)}
+.prm:hover,.prm:focus-within{background:linear-gradient(90deg,transparent,color-mix(in srgb,var(--hl) 7%,transparent))}
+.ctl .note{font-size:.78rem;color:var(--ink2);margin:.4rem 0 0}
+.reset{margin-top:1rem;padding:.35rem .8rem;border:1px solid var(--ink2);background:transparent;border-radius:3px;cursor:pointer}
+
+/* ---------- views ---------- */
+figure.view{display:flex;flex-direction:column}
+.bar{display:flex;flex-wrap:wrap;gap:.4rem .8rem;align-items:center;padding:.55rem .8rem;border-bottom:1px solid var(--rule);font-size:.82rem}
+.bar h2{font-size:1rem;font-weight:650;margin-right:auto}
+.seg{display:inline-flex;border:1px solid var(--rule);border-radius:4px;overflow:hidden}
+.seg label{position:relative;padding:.18rem .5rem;cursor:pointer;border-right:1px solid var(--rule);white-space:nowrap}
+.seg label:last-child{border-right:0}
+.seg input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.seg label:has(input:checked){background:var(--hl);color:var(--panel)}
+.seg label:has(input:focus-visible){outline:2px solid var(--hl);outline-offset:-2px}
+.tg{display:inline-flex;gap:.7rem}
+.tg label{display:inline-flex;gap:.25rem;align-items:center;cursor:pointer}
+.view svg{width:100%;height:auto;aspect-ratio:1/1;display:block;max-height:78vh}
+.view figcaption{font-size:.8rem;color:var(--ink2);padding:.5rem .8rem .8rem;max-width:70ch}
+.alert{margin:.5rem .8rem 0;padding:.35rem .6rem;border-left:3px solid var(--bad);font-size:.82rem;color:var(--bad);display:none}
+.alert.on{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:.3rem 1rem;padding:0 .8rem;font-size:.78rem;color:var(--ink2)}
+.legend i{display:inline-block;width:.8rem;height:.8rem;vertical-align:-.1rem;margin-right:.3rem;border:1px solid var(--steel-edge)}
+
+/* svg geometry */
+.lam{fill:var(--steel);stroke:var(--steel-edge);stroke-width:1.1px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.mn{fill:var(--magn);stroke:var(--steel-edge);stroke-width:1.1px;vector-effect:non-scaling-stroke}
+.ms{fill:var(--mags);stroke:var(--steel-edge);stroke-width:1.1px;vector-effect:non-scaling-stroke}
+.glue{fill:var(--glue);stroke:var(--steel-edge);stroke-width:.8px;vector-effect:non-scaling-stroke}
+.inset-bg{fill:var(--panel);stroke:var(--dim);stroke-width:1.4px;vector-effect:non-scaling-stroke}
+.ctl-top{position:sticky;top:0;z-index:2;background:var(--panel);display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.65rem 0;border-bottom:1px solid var(--rule)}
+.ctl-top span{font-size:.8rem;color:var(--ink2)}
+.btn{padding:.35rem .8rem;border:1px solid var(--ink);background:var(--ink);color:var(--panel);border-radius:3px;cursor:pointer;font-size:.82rem;font-weight:600}
+.btn:disabled{opacity:.35;cursor:default}
+.btn-sm{padding:.18rem .55rem;border:1px solid var(--ink);background:transparent;border-radius:3px;cursor:pointer;font-size:.8rem;font-weight:600}
+.btn-sm:disabled{opacity:.35;cursor:default}
+.rs{display:none;border:0;background:none;color:var(--hl);font:600 .74rem var(--mono);cursor:pointer;padding:0 .2rem;white-space:nowrap}
+.prm.changed .rs{display:inline}
+.prm.changed .prm-h label code{color:var(--hl)}
+@media (max-width:860px){.ctl-top{position:static}}
+.air{fill:var(--air);stroke:var(--steel-edge);stroke-width:1.1px;vector-effect:non-scaling-stroke}
+.ghost{opacity:.33}
+.k0{fill:none;stroke:var(--hl);stroke-width:2.2px;vector-effect:non-scaling-stroke}
+.stator{fill:var(--rule);fill-opacity:.45;stroke:var(--ink2);stroke-width:1px;vector-effect:non-scaling-stroke}
+.shaft{fill:var(--paper);stroke:var(--steel-edge);stroke-width:1.1px;vector-effect:non-scaling-stroke}
+.mag-arrow{stroke:#fff;stroke-width:1.4px;vector-effect:non-scaling-stroke;fill:none}
+.mag-head{fill:#fff}
+.cons{fill:none;stroke:var(--hl);stroke-width:.8px;vector-effect:non-scaling-stroke;opacity:.75}
+.cons.axis{stroke:var(--ink2)}
+.pt circle{fill:var(--ink)}
+.pt text{fill:var(--ink);font-family:var(--mono);font-weight:600;paint-order:stroke;stroke:var(--panel);stroke-linejoin:round}
+.dim{color:var(--dim)}
+.dim line,.dim .arc{stroke:currentColor;stroke-width:1px;vector-effect:non-scaling-stroke;fill:none}
+.dim .ext{opacity:.6}
+.dim .ah{fill:currentColor}
+.dim text{fill:currentColor;font-family:var(--mono);paint-order:stroke;stroke:var(--panel);stroke-linejoin:round}
+.dim .ov{stroke:currentColor;stroke-width:2.5px;vector-effect:non-scaling-stroke;fill:none;opacity:0}
+.dim.hot{color:var(--hl)}
+.dim.hot line{stroke-width:2.2px}
+.dim.hot .ov{opacity:1}
+.dim.hot text{font-weight:700}
+.hlpath{fill:none;stroke:var(--hl);stroke-width:3.5px;vector-effect:non-scaling-stroke;stroke-linejoin:round}
+.hlstart{fill:var(--hl)}
+.svgmsg{fill:var(--bad);font-family:var(--sans)}
+
+/* ---------- outputs ---------- */
+.out{display:grid;grid-template-columns:.8fr 1.1fr 1fr;gap:0}
+.mass-big{font-size:2.6rem;font-weight:700;font-stretch:78%;line-height:1;margin:.2rem 0 .1rem}
+.mass-big small{font-size:1rem;font-weight:500;color:var(--ink2);margin-left:.25rem}
+.mass-sub{color:var(--ink2);font-size:.82rem;margin:0 0 .8rem}
+.mbar{display:flex;height:10px;border-radius:2px;overflow:hidden;margin:.2rem 0 .8rem}
+.mbar i{display:block}
+.out>div{padding:.8rem 1rem 1.2rem}
+.out>div+div{border-left:1px solid var(--rule)}
+@media (max-width:1100px){.out{grid-template-columns:1fr}.out>div+div{border-left:0;border-top:1px solid var(--rule)}}
+.out h2{font-size:1.1rem;font-weight:650;margin-bottom:.5rem}
+.out h4{font-size:.8rem;font-weight:600;color:var(--ink2);margin:.8rem 0 .2rem;font-stretch:85%}
+.chk{list-style:none;margin:0;padding:0}
+.chk li{display:grid;grid-template-columns:1.2rem 1fr;gap:0 .4rem;padding:.25rem 0;border-bottom:1px dotted var(--rule);font-size:.82rem}
+.chk b{font-weight:700;text-align:center}
+.chk .pass b{color:var(--ok)}.chk .fail b{color:var(--bad)}.chk .warn b{color:var(--warn)}.chk .info b{color:var(--ink2)}
+.chk .fail{background:color-mix(in srgb,var(--bad) 8%,transparent)}
+.chk code{font-size:.78rem}
+.chk small{grid-column:2;color:var(--ink2);font-family:var(--mono);font-size:.74rem}
+table{border-collapse:collapse;width:100%;font-size:.84rem}
+th,td{text-align:left;padding:.28rem .5rem .28rem 0;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-weight:600;color:var(--ink2);font-stretch:85%}
+td.n{font-family:var(--mono);font-size:.8rem;text-align:right;white-space:nowrap}
+
+/* ---------- documentation ---------- */
+.doc{max-width:1160px;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+.doc section{padding:2.2rem 0 1rem;border-top:2px solid var(--ink)}
+.doc section+section{margin-top:1.5rem}
+.doc h2{font-size:clamp(1.4rem,2.4vw,1.9rem);font-weight:700;margin-bottom:.4rem}
+.doc h3{font-size:1.1rem;font-weight:650;margin:1.6rem 0 .4rem}
+.doc p,.doc li{max-width:75ch}
+.doc .lead{color:var(--ink2);font-size:1.02rem}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scroll table{min-width:640px}
+.doc td code,.doc th code{font-size:.8rem}
+.used{color:var(--ok);font-weight:600}.unused{color:var(--ink2)}
+.flow{list-style:none;counter-reset:f;display:flex;flex-wrap:wrap;gap:.6rem;padding:0;margin:1rem 0}
+.flow li{counter-increment:f;flex:1 1 170px;border:1px solid var(--ink2);border-radius:4px;padding:.55rem .7rem;background:var(--panel);font-size:.84rem;position:relative}
+.flow li::before{content:counter(f);display:block;font-weight:700;font-stretch:75%;font-size:1.25rem;color:var(--hl);line-height:1}
+.flow li b{display:block;font-weight:650}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:2rem;align-items:start}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+.diagram{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:.5rem}
+.diagram svg{width:100%;height:auto;display:block}
+.dg-line{stroke:var(--ink);stroke-width:1.5;fill:none}
+.dg-thin{stroke:var(--ink2);stroke-width:1;fill:none}
+.dg-dash{stroke:var(--ink2);stroke-width:1;fill:none;stroke-dasharray:5 4}
+.dg-hl{stroke:var(--hl);stroke-width:2;fill:none}
+.dg-dim{stroke:var(--dim);stroke-width:1.2;fill:none}
+.dg-t{fill:var(--ink);font:12px var(--sans)}
+.dg-m{fill:var(--ink);font:11px var(--mono)}
+.dg-hlt{fill:var(--hl);font:600 11px var(--mono)}
+.dg-dimt{fill:var(--dim);font:600 11px var(--mono)}
+.dg-dot{fill:var(--ink)}
+.fn{border-left:3px solid var(--hl);padding:.2rem 0 .2rem .9rem;margin:1rem 0}
+.fn h4{margin:0;font-family:var(--mono);font-size:.9rem;font-weight:600}
+.fn p{margin:.2rem 0 0;font-size:.9rem}
+.fn .eq{font-family:var(--mono);font-size:.84rem;color:var(--ink2)}
+.loops{display:grid;gap:.6rem}
+.loop{display:grid;grid-template-columns:9rem 1fr auto;gap:.8rem;align-items:center;border-bottom:1px solid var(--rule);padding:.5rem 0}
+@media (max-width:640px){.loop{grid-template-columns:1fr}}
+.loop b{font-stretch:85%}
+.loop code{font-size:.8rem;line-height:1.7}
+.loop button{padding:.25rem .7rem;border:1px solid var(--hl);color:var(--hl);background:transparent;border-radius:3px;cursor:pointer;font-size:.82rem}
+.charts-bar{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin:.8rem 0}
+.charts-bar select{padding:.25rem .4rem;border:1px solid var(--rule);background:var(--panel);border-radius:3px;font-family:var(--mono);font-size:.85rem}
+.charts{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.chart{background:var(--panel);border:1px solid var(--rule);border-radius:4px;padding:.5rem .6rem .3rem}
+.chart h4{margin:0;font-size:.86rem;font-weight:600}
+.chart svg{width:100%;height:auto;display:block}
+.c-feas{fill:var(--okbg)}
+.c-line{fill:none;stroke:var(--ink);stroke-width:1.6}
+.c-bad{fill:none;stroke:var(--ink2);stroke-width:1;stroke-dasharray:3 3;opacity:.7}
+.c-now{stroke:var(--hl);stroke-width:1.4}
+.c-dot{fill:var(--hl)}
+.c-ax{stroke:var(--rule);stroke-width:1}
+.c-zero{stroke:var(--bad);stroke-width:1;stroke-dasharray:2 3}
+.c-t{fill:var(--ink2);font:10px var(--mono)}
+.find{counter-reset:k;list-style:none;padding:0}
+.find li{counter-increment:k;padding:.7rem 0 .7rem 2.4rem;border-bottom:1px solid var(--rule);position:relative}
+.find li::before{content:counter(k);position:absolute;left:0;top:.55rem;font-weight:700;font-stretch:75%;font-size:1.4rem;color:var(--bad)}
+.find b{display:block}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>Adaptive spoke-rotor geometry</h1>
+    <p>Live replica of <code>Adaptive_temp_24_09.py</code>, same names and equations, plus glue gap and rotor mass.</p>
+  </div>
+  <nav aria-label="Sections">
+    <a href="#explorer">Explorer</a><a href="#points">Points</a><a href="#limits">Bounds</a><a href="#sens">Sensitivity</a>
+  </nav>
+</header>
+
+<main class="app" id="explorer">
+  <aside class="ctl" id="ctl" aria-label="Parameters"></aside>
+
+  <figure class="view sec">
+    <div class="bar">
+      <h2>Section view</h2>
+      <button class="btn-sm" id="resetSec" type="button">Reset design</button>
+      <div class="seg" role="radiogroup" aria-label="Highlight boundary loop">
+        <label><input type="radio" name="loop" value="none" checked>None</label>
+        <label><input type="radio" name="loop" value="rotor">Rotor</label>
+        <label><input type="radio" name="loop" value="magnet">Magnet</label>
+        <label><input type="radio" name="loop" value="outer">Outer air</label>
+        <label><input type="radio" name="loop" value="inner">Inner air</label>
+        <label><input type="radio" name="loop" value="glue">Glue</label>
+      </div>
+      <div class="tg">
+        <label><input type="checkbox" id="tgPts" checked>Points</label>
+        <label><input type="checkbox" id="tgDim" checked>Dimensions</label>
+        <label><input type="checkbox" id="tgCon">Construction</label>
+      </div>
+    </div>
+    <div class="alert" id="secAlert"></div>
+    <svg id="secSvg" role="img" aria-label="One pole sector with labelled points and parameter dimensions"></svg>
+    <figcaption>Construction frame (before <code>rotation_angle_deg</code>). One sector = one spoke magnet on the 90° line, bounded by the pole-piece axes at 90° ± θ/2. Neighbouring sectors are shown faint so the web between pockets is visible. Hover a parameter to highlight its dimension.</figcaption>
+  </figure>
+
+  <figure class="view full">
+    <div class="bar">
+      <h2>Full rotor</h2>
+    </div>
+    <svg id="fullSvg" role="img" aria-label="Full rotor with all poles"></svg>
+    <div class="legend">
+      <span><i style="background:var(--steel)"></i>Lamination</span>
+      <span><i style="background:var(--magn)"></i><i style="background:var(--mags)"></i>Magnets, alternating tangential magnetisation</span>
+      <span><i style="background:var(--air)"></i>Air</span>
+      <span><i style="background:var(--glue)"></i>Glue gap</span>
+      <span><i style="background:transparent;border:2px solid var(--hl)"></i>Sector the script draws</span>
+    </div>
+    <figcaption>The script draws only the outlined sector; the rest are rotated copies.</figcaption>
+  </figure>
+
+  <section class="out" aria-label="Results">
+    <div>
+      <h2>Rotor mass</h2>
+      <div id="mass"></div>
+    </div>
+    <div>
+      <h2>Limits</h2>
+      <div id="chk"></div>
+    </div>
+    <div>
+      <h2>Derived values</h2>
+      <table id="der"></table>
+    </div>
+  </section>
+</main>
+
+<article class="doc">
+
+
+
+  <section id="points">
+    <h2>Point construction</h2>
+    <div class="two">
+      <div>
+        <p>All points are built on the left half (x ≤ 0) of a sector centred on 90°, then mirrored. θ = <code>pole_pitch_deg</code>, t = <code>Bridge_thickness</code>/2.</p>
+        <p><b>The web trick.</b> The pole-piece axis at 90° + θ/2 is the line x = −y·tan(θ/2). A parallel line shifted inward by a perpendicular distance t has a horizontal shift of t / cos(θ/2). P and G sit on that shifted line at y = r_im and y = r_s + <code>bridge_offset</code>. The neighbouring sector mirrors it on the other side of the axis, so the iron web between two inner pockets is exactly 2t = <code>Bridge_thickness</code>.</p>
+        <p><b>Glue gap (added, not in the script).</b> The slot P–Q–R stays where the script puts it, so the lamination is unchanged. The magnet is the slot offset inward by <code>magnet_glue_gap</code> on the two side faces only. The top stays at r_om in contact with the pole-piece lips, and the floor stays on r_im facing the air pocket. P_m, Q_m, R_m are where the offset side lines meet r_im, each other and r_om. At 0 the magnet equals the slot, exactly like the script.</p>
+        <p>Consequence: the magnet floor width 2|P_x| is not an input. It is set by <code>pole_number</code>, r_im and <code>Bridge_thickness</code>.</p>
+      </div>
+      <div class="diagram" aria-label="Offset-line construction of P and G">
+        <svg viewBox="0 0 340 250">
+          <line class="dg-dash" x1="230" y1="240" x2="230" y2="8"/>
+          <text class="dg-t" x="234" y="18">90° centreline</text>
+          <line class="dg-line" x1="230" y1="235" x2="156.9" y2="10"/>
+          <text class="dg-t" x="118" y="18">pole-piece axis</text>
+          <line class="dg-hl" x1="175.8" y1="10" x2="245.7" y2="225"/>
+          <line class="dg-thin" x1="138" y1="10" x2="207.8" y2="225" stroke-dasharray="2 3"/>
+          <text class="dg-m" x="60" y="232">neighbour's offset line</text>
+          <line class="dg-dash" x1="140" y1="85" x2="250" y2="85"/>
+          <text class="dg-m" x="254" y="88">y = r_im</text>
+          <line class="dg-dash" x1="140" y1="165" x2="250" y2="165"/>
+          <text class="dg-m" x="254" y="162">y = r_s +</text>
+          <text class="dg-m" x="254" y="175">bridge_offset</text>
+          <circle class="dg-dot" cx="200.2" cy="85" r="3.5"/><text class="dg-hlt" x="206" y="80">P</text>
+          <circle class="dg-dot" cx="226.2" cy="165" r="3.5"/><text class="dg-hlt" x="212" y="158">G</text>
+          <line class="dg-dim" x1="192.6" y1="120" x2="209.7" y2="114.4"/>
+          <text class="dg-dimt" x="120" y="126">t = Bridge_thickness/2</text>
+          <path class="dg-thin" d="M230 195 A40 40 0 0 0 217.6 197"/>
+          <text class="dg-m" x="200" y="190">θ/2</text>
+          <text class="dg-m" x="8" y="48">x_P = −(r_im·tan(θ/2) − t/cos(θ/2))</text>
+          <text class="dg-m" x="8" y="64">x_G = −(y_G·tan(θ/2) − t/cos(θ/2))</text>
+        </svg>
+      </div>
+    </div>
+    <h3>Points, live</h3>
+    <p>Values after rotation, in the script's <code>print_order</code>. With <code>rotation_angle_deg</code> = 0 they match the construction frame.</p>
+    <div class="scroll"><table id="ttab"></table></div>
+  </section>
+
+
+
+  <section id="limits">
+    <h2>Closed-form bounds</h2>
+        <p>Each row holds the other parameters at their current values. θ = 360/<code>pole_number</code>, t = <code>Bridge_thickness</code>/2.</p>
+    <div class="scroll"><table id="cftab"></table></div>
+  </section>
+
+  <section id="sens">
+    <h2>Sensitivity</h2>
+    <p class="lead">Sweep one parameter, others fixed. Green = feasible, dashed = a hard limit fails, teal = current value.</p>
+    <div class="charts-bar"><label for="sensSel">Sweep</label><select id="sensSel"></select></div>
+    <div class="charts" id="charts"></div>
+  </section>
+
+</article>
+
+<script>
+"use strict";
+/* ============================================================
+   Parameter spec — names identical to Adaptive_temp_24_09.py
+   ============================================================ */
+const SPEC=[
+ {g:"Rotor",k:"pole_number",v:10,lo:4,hi:24,st:2,u:"",int:true,d:"Sets pole pitch θ = 360/pole_number and the sector width."},
+ {k:"rotor_diameter",v:106,lo:40,hi:200,st:0.5,u:"mm",d:"OD. r_om and r_im are measured down from it."},
+ {k:"shaft_diameter",v:30,lo:4,hi:100,st:0.5,u:"mm",d:"Shaft arc A′–A. Lifts the pocket floor G."},
+ {g:"Magnet slot",k:"magnet_inset",v:2,lo:0,hi:10,st:0.1,u:"mm",d:"Magnet top below the OD. r_om = r_r − magnet_inset."},
+ {k:"magnet_depth",v:28,lo:1,hi:60,st:0.5,u:"mm",d:"Radial magnet length. r_im = r_om − magnet_depth."},
+ {k:"magnet_opening",v:10,lo:0,hi:30,st:0.1,u:"mm",d:"Slot mouth C–C′ at the OD."},
+ {g:"Adaptive magnet",k:"magnet_X",v:18,lo:0,hi:60,st:0.25,u:"mm",d:"Height of bulge point Q above r_im."},
+ {k:"magnet_Y",v:8.5,lo:0,hi:30,st:0.1,u:"mm",d:"Half-width at the bulge Q."},
+ {k:"magnet_Z",v:6,lo:0,hi:30,st:0.1,u:"mm",d:"Half-width at the top R. Must exceed magnet_opening/2."},
+ {g:"Magnet glue",k:"magnet_glue_gap",v:0.1,lo:0,hi:1,st:0.01,u:"mm",d:"Adhesive gap on the two magnet side faces only. Top stays in contact with the pole-piece lips; floor stays on r_im. Slot unchanged, magnet narrows."},
+ {g:"Bridge",k:"Bridge_thickness",v:2,lo:0,hi:8,st:0.1,u:"mm",d:"Web between adjacent pockets. Each side sits t = Bridge_thickness/2 off the pole-piece axis."},
+ {k:"bridge_offset",v:3.5,lo:0,hi:30,st:0.1,u:"mm",d:"y of pocket floor G above r_s."},
+ {g:"Placement",k:"rotation_angle_deg",v:0,lo:-180,hi:180,st:1,u:"°",nosweep:true,d:"Rigid rotation of every point. No shape change."},
+ {g:"Mass",k:"stack_length",v:40,lo:5,hi:200,st:1,u:"mm",nosweep:true,mass:true,d:"Axial rotor stack length. Magnets assumed full length."},
+ {k:"magnet_density",v:7.5,lo:4,hi:9,st:0.01,u:"g/cc",nosweep:true,mass:true,d:"NdFeB ≈ 7.4–7.6, bonded NdFeB ≈ 5–6, ferrite ≈ 4.9."},
+ {k:"lamination_density",v:7.65,lo:7,hi:8.2,st:0.01,u:"g/cc",nosweep:true,mass:true,d:"Electrical steel ≈ 7.60–7.70 (lower for high-Si grades)."},
+ {k:"stacking_factor",v:0.97,lo:0.85,hi:1,st:0.005,u:"",nosweep:true,mass:true,d:"Steel fraction of the stack. 1 = solid."}
+];
+const DEF={}; SPEC.forEach(s=>DEF[s.k]=s.v);
+const P=Object.assign({},DEF);
+const SPECMAP={}; SPEC.forEach(s=>SPECMAP[s.k]=s);
+
+/* ============================================================
+   Math — mirrors the Python functions
+   ============================================================ */
+const rad=d=>d*Math.PI/180, deg=r=>r*180/Math.PI;
+const polar=(r,a)=>[r*Math.cos(rad(a)),r*Math.sin(rad(a))];
+const mir=p=>[-p[0],p[1]];
+const rot=(p,a)=>{const c=Math.cos(rad(a)),s=Math.sin(rad(a));return[p[0]*c-p[1]*s,p[0]*s+p[1]*c]};
+const hyp=p=>Math.hypot(p[0],p[1]);
+const shoelace=pts=>{let s=0;for(let i=0;i<pts.length;i++){const a=pts[i],b=pts[(i+1)%pts.length];s+=a[0]*b[1]-b[0]*a[1]}return Math.abs(s)/2};
+const segA=(r,phi)=>r*r/2*(phi-Math.sin(phi));
+const f2=n=>Number.isFinite(n)?(Math.abs(n)<5e-4?0:n).toFixed(2):"—";
+const f3=n=>Number.isFinite(n)?(Math.abs(n)<5e-5?0:n).toFixed(3):"—";
+const $=s=>document.querySelector(s);
+const PRINT_ORDER=["A","B","C","D","R","Q","P","E","F","G","G'","P'","Q'","R'","D'","C'","B'","A'"];
+
+function build(p){
+  const t=p.Bridge_thickness/2, rs=p.shaft_diameter/2, rr=p.rotor_diameter/2;
+  const rom=rr-p.magnet_inset, rim=rom-p.magnet_depth, ho=p.magnet_opening/2;
+  const pitch=360/p.pole_number, half=pitch/2, a=rad(half);
+  const Sn=Math.sin(a), Cs=Math.cos(a), T=Math.tan(a);
+  const left=90+half;
+  const pt={};
+  pt.A=polar(rs,left); pt.B=polar(rr,left);
+  const cy2=rr*rr-ho*ho; pt.C=[-ho,cy2>0?Math.sqrt(cy2):NaN];
+  pt.D=[-ho,rom];
+  pt.P=[-(rim*T-t/Cs),rim];
+  pt.Q=[-p.magnet_Y,rim+p.magnet_X];
+  pt.R=[-p.magnet_Z,rom];
+  pt.E=polar(rim,90); pt.F=polar(rs,90);
+  const yg=rs+p.bridge_offset;
+  pt.G=[-(yg*T-t/Cs),yg];
+  const gap=Math.max(0,p.magnet_glue_gap||0), ctr=[0,(rim+rom)/2];
+  const offL=(a,b)=>{const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;let nx=-dy/L,ny=dx/L;if((ctr[0]-(a[0]+b[0])/2)*nx+(ctr[1]-(a[1]+b[1])/2)*ny<0){nx=-nx;ny=-ny}return[[a[0]+nx*gap,a[1]+ny*gap],[b[0]+nx*gap,b[1]+ny*gap]]};
+  const X2=(l1,l2)=>{const[a,b]=l1,[c,d]=l2,r=[b[0]-a[0],b[1]-a[1]],q=[d[0]-c[0],d[1]-c[1]],den=r[0]*q[1]-r[1]*q[0];if(Math.abs(den)<1e-12)return[NaN,NaN];const k=((c[0]-a[0])*q[1]-(c[1]-a[1])*q[0])/den;return[a[0]+r[0]*k,a[1]+r[1]*k]};
+  if(gap>0){const PQ=offL(pt.P,pt.Q),QR=offL(pt.Q,pt.R);
+    pt.Pm=X2(PQ,[[0,rim],[1,rim]]);let q=X2(PQ,QR);if(!Number.isFinite(q[0]))q=PQ[1];pt.Qm=q;pt.Rm=X2(QR,[[0,rom],[1,rom]]);}
+  else{pt.Pm=pt.P.slice();pt.Qm=pt.Q.slice();pt.Rm=pt.R.slice();}
+  for(const k of["A","B","C","D","P","Q","R","G","Pm","Qm","Rm"]) pt[k+"'"]=mir(pt[k]);
+  const g={p,t,rs,rr,rom,rim,ho,pitch,half,a,Sn,Cs,T,yg,pt};
+  g.rG=hyp(pt.G);
+  g.gap=gap;
+  g.slotArea=shoelace([pt.P,pt["P'"],pt["Q'"],pt["R'"],pt.R,pt.Q]);
+  g.magArea=shoelace([pt.Pm,pt["Pm'"],pt["Qm'"],pt["Rm'"],pt.Rm,pt.Qm]);
+  g.glueArea=g.slotArea-g.magArea;
+  const phiC=2*Math.asin(Math.min(1,Math.max(0,ho/rr)));
+  g.outerAir=shoelace([pt.D,pt["D'"],pt["C'"],pt.C])+segA(rr,phiC);
+  const phiG=2*Math.asin(Math.min(1,Math.abs(pt.G[0])/g.rG));
+  g.innerAir=shoelace([pt.P,pt["P'"],pt["G'"],pt.G])-segA(g.rG,phiG);
+  g.sector=rad(pitch)/2*(rr*rr-rs*rs);
+  g.lamArea=g.sector-g.slotArea-g.outerAir-g.innerAir;
+  g.neckQ=2*(pt.Q[1]*Sn-p.magnet_Y*Cs);
+  g.neckR=2*(rom*Sn-p.magnet_Z*Cs);
+  g.neck=Math.min(g.neckQ,g.neckR);
+  g.topIron=rr-hyp(pt.R);
+  g.hub=g.rG-rs;
+  g.webLen=(rim-yg)/Cs;
+  g.mouthDeg=2*deg(Math.asin(Math.min(1,ho/rr)));
+  g.poleArc=(pitch-g.mouthDeg)/pitch;
+  g.lipW=p.magnet_Z-ho; g.lipH=pt.C[1]-rom;
+  const L=p.stack_length||0;
+  g.lamMass=g.lamArea*p.pole_number*L*(p.stacking_factor??1)*(p.lamination_density||0)/1000/1000;
+  g.magMass=g.magArea*p.pole_number*L*(p.magnet_density||0)/1000/1000;
+  g.totalMass=g.lamMass+g.magMass;
+  g.floorW=-2*pt.Pm[0]; g.bulgeW=-2*pt.Qm[0]; g.topW=-2*pt.Rm[0]; g.slotFloorW=-2*pt.P[0]; g.baseW=-2*pt.G[0];
+  return g;
+}
+
+/* ============================================================
+   Limits
+   ============================================================ */
+const CHECKS=[
+ {id:"s1",src:"script",lvl:"hard",f:"shaft_radius > 0",t:g=>g.rs>0,v:g=>`r_s = ${f2(g.rs)}`},
+ {id:"s2",src:"script",lvl:"hard",f:"rotor_radius > shaft_radius",t:g=>g.rr>g.rs,v:g=>`${f2(g.rr)} > ${f2(g.rs)}`},
+ {id:"s3",src:"script",lvl:"hard",f:"r_s < r_im < r_om < r_r",t:g=>g.rs<g.rim&&g.rim<g.rom&&g.rom<g.rr,v:g=>`${f2(g.rs)} < ${f2(g.rim)} < ${f2(g.rom)} < ${f2(g.rr)}`},
+ {id:"s4",src:"script",lvl:"hard",f:"0 < magnet_X < magnet_depth",t:g=>0<g.p.magnet_X&&g.p.magnet_X<g.p.magnet_depth,v:g=>`0 < ${f2(g.p.magnet_X)} < ${f2(g.p.magnet_depth)}`},
+ {id:"s5",src:"script",lvl:"hard",f:"magnet_Y > 0 and magnet_Z > 0",t:g=>g.p.magnet_Y>0&&g.p.magnet_Z>0,v:g=>`Y ${f2(g.p.magnet_Y)}, Z ${f2(g.p.magnet_Z)}`},
+ {id:"s6",src:"script",lvl:"hard",f:"magnet_opening > 0",t:g=>g.p.magnet_opening>0,v:g=>f2(g.p.magnet_opening)},
+ {id:"s7",src:"script",lvl:"hard",f:"magnet_opening/2 < rotor_radius",t:g=>g.ho<g.rr,v:g=>`${f2(g.ho)} < ${f2(g.rr)}`},
+ {id:"s8",src:"script",lvl:"hard",f:"bridge_offset > 0",t:g=>g.p.bridge_offset>0,v:g=>f2(g.p.bridge_offset)},
+ {id:"s9",src:"script",lvl:"hard",f:"r_s + bridge_offset < r_im",t:g=>g.yg<g.rim,v:g=>`${f2(g.yg)} < ${f2(g.rim)}`},
+ {id:"g1",src:"geometry",lvl:"hard",f:"magnet_Z > magnet_opening/2",why:"Retention lip D–R must exist.",t:g=>g.p.magnet_Z>g.ho,v:g=>`${f2(g.p.magnet_Z)} > ${f2(g.ho)}`},
+ {id:"g2",src:"geometry",lvl:"hard",f:"√(magnet_Z² + r_om²) < r_r",why:"Magnet corner R inside the OD.",t:g=>hyp(g.pt.R)<g.rr,v:g=>`${f2(hyp(g.pt.R))} < ${f2(g.rr)}`},
+ {id:"g3",src:"geometry",lvl:"hard",f:"r_im·sin(θ/2) > t",why:"Magnet floor keeps positive width.",t:g=>g.rim*g.Sn>g.t,v:g=>`${f2(g.rim*g.Sn)} > ${f2(g.t)}`},
+ {id:"g4",src:"geometry",lvl:"hard",f:"(r_s + bridge_offset)·sin(θ/2) > t",why:"Pocket floor keeps positive width.",t:g=>g.yg*g.Sn>g.t,v:g=>`${f2(g.yg*g.Sn)} > ${f2(g.t)}`},
+ {id:"g5",src:"geometry",lvl:"hard",f:"pole neck = 2·min(y_Q·sin − Y·cos, r_om·sin − Z·cos) > 0",why:"Adjacent magnets must not meet across the pole piece.",t:g=>g.neck>0,v:g=>`${f2(g.neck)} > 0`},
+ {id:"g6",src:"geometry",lvl:"hard",f:"Bridge_thickness > 0",why:"Web ties pole pieces to the hub.",t:g=>g.p.Bridge_thickness>0,v:g=>f2(g.p.Bridge_thickness)},
+ {id:"g7",src:"geometry",lvl:"hard",f:"magnet survives magnet_glue_gap",why:"Offset magnet keeps positive widths and P_m < Q_m < R_m in height.",t:g=>{const a=g.pt;return g.p.magnet_glue_gap>=0&&a.Pm[0]<0&&a.Qm[0]<0&&a.Rm[0]<0&&a.Pm[1]<a.Qm[1]&&a.Qm[1]<a.Rm[1]},v:g=>`widths ${f2(g.floorW)} / ${f2(g.bulgeW)} / ${f2(g.topW)}`},
+ {id:"w1",src:"warning",lvl:"warn",f:"r_r − |R| ≥ 1.0 mm",why:"Iron over the magnet corner.",t:g=>g.topIron>=1,v:g=>f2(g.topIron)},
+ {id:"w2",src:"warning",lvl:"warn",f:"Bridge_thickness ≥ 1.0 mm",why:"Punching limit, roughly 2× lamination gauge.",t:g=>g.p.Bridge_thickness>=1,v:g=>f2(g.p.Bridge_thickness)},
+ {id:"w3",src:"warning",lvl:"warn",f:"hub |G| − r_s ≥ 2.0 mm",why:"Ring carrying torque to the shaft.",t:g=>g.hub>=2,v:g=>f2(g.hub)},
+ {id:"w4",src:"warning",lvl:"warn",f:"pole neck ≥ 2.0 mm",why:"Narrowest pole-piece section.",t:g=>g.neck>=2,v:g=>f2(g.neck)},
+ {id:"w5",src:"warning",lvl:"warn",f:"magnet_glue_gap ≤ 0.3 mm",why:"Typical adhesive gap 0.05–0.2 mm; larger costs magnet and adds reluctance.",t:g=>g.p.magnet_glue_gap<=0.3,v:g=>f2(g.p.magnet_glue_gap)}
+];
+const HARD=CHECKS.filter(c=>c.lvl==="hard");
+const pass=(c,g)=>{try{return !!c.t(g)}catch(e){return false}};
+const feasible=g=>HARD.every(c=>pass(c,g));
+
+/* closed-form bounds */
+const CF=[
+ {k:"magnet_Z",e:"magnet_opening/2 < Z < min(√(r_r² − r_om²), r_om·tan(θ/2))",f:g=>[g.ho,Math.min(Math.sqrt(Math.max(0,g.rr*g.rr-g.rom*g.rom)),g.rom*g.T)]},
+ {k:"magnet_Y",e:"0 < Y < (r_im + magnet_X)·tan(θ/2)",f:g=>[0,(g.rim+g.p.magnet_X)*g.T]},
+ {k:"magnet_X",e:"max(0, Y/tan(θ/2) − r_im) < X < magnet_depth",f:g=>[Math.max(0,g.p.magnet_Y/g.T-g.rim),g.p.magnet_depth]},
+ {k:"magnet_opening",e:"0 < opening < min(2·magnet_Z, rotor_diameter)",f:g=>[0,Math.min(2*g.p.magnet_Z,g.p.rotor_diameter)]},
+ {k:"Bridge_thickness",e:"0 < Bridge_thickness < 2·min(r_s + bridge_offset, r_im)·sin(θ/2)",f:g=>[0,2*Math.min(g.yg,g.rim)*g.Sn]},
+ {k:"bridge_offset",e:"max(0, t/sin(θ/2) − r_s) < bridge_offset < r_im − r_s",f:g=>[Math.max(0,g.t/g.Sn-g.rs),g.rim-g.rs]},
+ {k:"magnet_depth",e:"magnet_X < depth < min(r_om − r_s − bridge_offset, r_om − t/sin(θ/2), r_om + X − Y/tan(θ/2))",f:g=>[g.p.magnet_X,Math.min(g.rom-g.rs-g.p.bridge_offset,g.rom-g.t/g.Sn,g.rom+g.p.magnet_X-g.p.magnet_Y/g.T)]},
+ {k:"magnet_inset",e:"max(0, r_r − √(r_r² − Z²)) < inset < min(r_r − depth − r_s − bridge_offset, r_r − Z/tan(θ/2), r_r − depth + X − Y/tan(θ/2), r_r − depth − t/sin(θ/2))",
+   f:g=>{const p=g.p,rr=g.rr;return[Math.max(0,rr-Math.sqrt(Math.max(0,rr*rr-p.magnet_Z**2))),Math.min(rr-p.magnet_depth-g.rs-p.bridge_offset,rr-p.magnet_Z/g.T,rr-p.magnet_depth+p.magnet_X-p.magnet_Y/g.T,rr-p.magnet_depth-g.t/g.Sn)]}},
+ {k:"shaft_diameter",e:"2·max(0, t/sin(θ/2) − bridge_offset) < shaft_diameter < 2·(r_im − bridge_offset)",f:g=>[2*Math.max(0,g.t/g.Sn-g.p.bridge_offset),2*(g.rim-g.p.bridge_offset)]}
+];
+
+/* ============================================================
+   Loops (identical order to the script)
+   ============================================================ */
+const LOOPS={
+ rotor:[["L","A","B"],["A","B","C"],["L","C","D"],["L","D","R"],["L","R","Q"],["L","Q","P"],["L","P","G"],["A","G","G'"],["L","G'","P'"],["L","P'","Q'"],["L","Q'","R'"],["L","R'","D'"],["L","D'","C'"],["A","C'","B'"],["L","B'","A'"],["A","A'","A"]],
+ magnet:[["L","Pm","Pm'"],["L","Pm'","Qm'"],["L","Qm'","Rm'"],["L","Rm'","Rm"],["L","Rm","Qm"],["L","Qm","Pm"]],
+ slot:[["L","P","P'"],["L","P'","Q'"],["L","Q'","R'"],["L","R'","R"],["L","R","Q"],["L","Q","P"]],
+ glue:[["L","P","Q"],["L","Q","R"],["L","R","Rm"],["L","Rm","Qm"],["L","Qm","Pm"],["L","Pm","P"]],
+ glueR:[["L","P'","Q'"],["L","Q'","R'"],["L","R'","Rm'"],["L","Rm'","Qm'"],["L","Qm'","Pm'"],["L","Pm'","P'"]],
+ outer:[["L","D","D'"],["L","D'","C'"],["A","C'","C"],["L","C","D"]],
+ inner:[["L","P","P'"],["L","P'","G'"],["A","G'","G"],["L","G","P"]]
+};
+const n3=v=>+v.toFixed(4);
+const S=p=>[p[0],-p[1]];
+const Mv=p=>{const s=S(p);return`M${n3(s[0])} ${n3(s[1])}`};
+const Lv=p=>{const s=S(p);return`L${n3(s[0])} ${n3(s[1])}`};
+function Av(from,to){
+  const r=hyp(from);let sw=deg(Math.atan2(to[1],to[0])-Math.atan2(from[1],from[0]));
+  while(sw<=-180)sw+=360;while(sw>180)sw-=360;
+  const s=S(to);return`A${n3(r)} ${n3(r)} 0 0 ${sw>0?0:1} ${n3(s[0])} ${n3(s[1])}`;
+}
+function loopPath(seq,pts){let d=Mv(pts[seq[0][1]]);for(const[ty,a,b]of seq)d+=ty==="L"?Lv(pts[b]):Av(pts[a],pts[b]);return d+"Z"}
+const rotPts=(pts,ang)=>{const o={};for(const k in pts)o[k]=rot(pts[k],ang);return o};
+const allFinite=pts=>Object.values(pts).every(p=>Number.isFinite(p[0])&&Number.isFinite(p[1]));
+
+/* ============================================================
+   State
+   ============================================================ */
+let hot=null, loopSel="none";
+const reduceMotion=matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ============================================================
+   Section view
+   ============================================================ */
+function renderSection(g){
+  const svg=$("#secSvg"), p=g.p, pt=g.pt;
+  if(!allFinite(pt)){svg.setAttribute("viewBox","0 0 100 40");svg.innerHTML=`<text class="svgmsg" x="50" y="20" text-anchor="middle" font-size="4">Geometry cannot be constructed (C undefined)</text>`;return}
+  const rr=g.rr, rs=g.rs;
+  const w=Math.max(rr*g.Sn,p.magnet_Y,p.magnet_Z,g.ho,Math.abs(pt.P[0]),Math.abs(pt.G[0]),1);
+  const yLow=Math.min(rs*g.Cs,rs);
+  const H=Math.max(rr-yLow,1);
+  const u=Math.max(H,2*w)/40, fs=u*1.3, hw=fs*0.22;
+  const x0=-w-u*13, x1=w+u*13;
+  const rPitch=Math.max(rs-u*2.2,u), yT=rr+u*7.5, yB=Math.min(rPitch*g.Cs,yLow)-u*4.2;
+  svg.setAttribute("viewBox",`${n3(x0)} ${n3(-yT)} ${n3(x1-x0)} ${n3(yT-yB)}`);
+  svg.style.aspectRatio=`${(x1-x0)/(yT-yB)}`;
+  let s="";
+  // ghosts
+  for(const dk of[-1,1]){
+    const rp=rotPts(pt,dk*g.pitch);
+    s+=`<g class="ghost"><path class="lam" d="${loopPath(LOOPS.rotor,rp)}"/><path class="glue" d="${loopPath(LOOPS.slot,rp)}"/><path class="ms" d="${loopPath(LOOPS.magnet,rp)}"/><path class="air" d="${loopPath(LOOPS.outer,rp)}"/><path class="air" d="${loopPath(LOOPS.inner,rp)}"/></g>`;
+  }
+  s+=`<path class="lam" d="${loopPath(LOOPS.rotor,pt)}"/><path class="glue" d="${loopPath(LOOPS.slot,pt)}"/><path class="mn" d="${loopPath(LOOPS.magnet,pt)}"/><path class="air" d="${loopPath(LOOPS.outer,pt)}"/><path class="air" d="${loopPath(LOOPS.inner,pt)}"/>`;
+  // construction
+  if($("#tgCon").checked){
+    const da=`stroke-dasharray="${n3(u*0.8)} ${n3(u*0.5)}"`;
+    s+=`<line class="cons axis" x1="0" y1="${n3(-yB)}" x2="0" y2="${n3(-yT)}" ${da}/>`;
+    for(const sg of[-1,1]){
+      const e=polar(rr+u*3,90+sg*g.half);s+=`<line class="cons axis" x1="0" y1="0" x2="${n3(e[0])}" y2="${n3(-e[1])}" ${da}/>`;
+      const off=y=>-sg*(y*g.T-g.t/g.Cs);
+      s+=`<line class="cons" x1="${n3(off(yB))}" y1="${n3(-yB)}" x2="${n3(off(rr))}" y2="${n3(-rr)}" ${da}/>`;
+    }
+    for(const r of[g.rim,g.rom,g.rG])s+=`<circle class="cons" cx="0" cy="0" r="${n3(r)}" ${da}/>`;
+  }
+  // dimensions
+  if($("#tgDim").checked) s+=dims(g,u,fs,hw);
+  // loop highlight
+  if(loopSel!=="none"){
+    const seq=LOOPS[loopSel],d=loopPath(seq,pt)+(loopSel==="glue"?loopPath(LOOPS.glueR,pt):""),per=u*2.4;
+    s+=`<path class="hlpath" d="${d}" stroke-dasharray="${n3(u*1.6)} ${n3(u*0.8)}">${reduceMotion?"":`<animate attributeName="stroke-dashoffset" from="0" to="${n3(-per)}" dur="0.9s" repeatCount="indefinite"/>`}</path>`;
+    const st=S(pt[seq[0][1]]);s+=`<circle class="hlstart" cx="${n3(st[0])}" cy="${n3(st[1])}" r="${n3(fs*0.35)}"/>`;
+  }
+  // glue detail inset
+  if(g.gap>0) s+=inset(g,u,fs,hw,w,yLow);
+  // points
+  if($("#tgPts").checked){
+    const OFF={A:[-1,1.1],B:[-1,0],C:[-1,-0.7],D:[1,-0.5],R:[-1,1.1],Q:[-1,0.3],P:[-1,-0.2],G:[-1,0.9],E:[1,-0.4],F:[1,1.1]};
+    s+=`<g class="pt">`;
+    for(const k of PRINT_ORDER){
+      const base=k.replace("'",""),pr=k.includes("'");
+      const q=S(pt[k]),o=OFF[base];const dx=(pr?-o[0]:o[0])*fs*0.45,dy=o[1]*fs*0.7;
+      s+=`<circle cx="${n3(q[0])}" cy="${n3(q[1])}" r="${n3(fs*0.16)}"/><text x="${n3(q[0]+dx)}" y="${n3(q[1]+dy+fs*0.3)}" font-size="${n3(fs*0.95)}" stroke-width="${n3(hw)}" text-anchor="${dx<0?"end":"start"}">${base}${pr?"′":""}</text>`;
+    }
+    s+=`</g>`;
+  }
+  svg.innerHTML=s;
+}
+
+function inset(g,u,fs,hw,w,yLow){
+  const pt=g.pt,gap=g.gap,wr=Math.max(gap*4,0.8),R=u*4.4,m=R/wr;
+  const zc=[(pt["Q'"][0]+pt["Qm'"][0])/2,(pt["Q'"][1]+pt["Qm'"][1])/2];
+  const ic=[w+u*6.4,yLow+u*4.6],icS=S(ic),zS=S(zc);
+  const tr=`translate(${n3(icS[0])} ${n3(icS[1])}) scale(${n3(m)}) translate(${n3(-zS[0])} ${n3(-zS[1])})`;
+  // gap dimension on edge Q'→R'
+  const a=pt["Q'"],b=pt["R'"],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L;
+  const sp=[a[0]+ux*wr*0.55,a[1]+uy*wr*0.55];let nx=-uy,ny=ux;const ctr=[0,(g.rim+g.rom)/2];if((ctr[0]-sp[0])*nx+(ctr[1]-sp[1])*ny<0){nx=-nx;ny=-ny}
+  const ep=[sp[0]+nx*gap,sp[1]+ny*gap];
+  let q=`<circle class="ext" cx="${n3(zS[0])}" cy="${n3(zS[1])}" r="${n3(wr)}" fill="none" stroke-dasharray="${n3(u*0.4)} ${n3(u*0.3)}"/>`;
+  q+=`<circle class="inset-bg" cx="${n3(icS[0])}" cy="${n3(icS[1])}" r="${n3(R)}"/>`;
+  q+=`<clipPath id="insetClip"><circle cx="${n3(icS[0])}" cy="${n3(icS[1])}" r="${n3(R)}"/></clipPath>`;
+  q+=`<g clip-path="url(#insetClip)"><g transform="${tr}"><path class="lam" d="${loopPath(LOOPS.rotor,pt)}"/><path class="glue" d="${loopPath(LOOPS.slot,pt)}"/><path class="mn" d="${loopPath(LOOPS.magnet,pt)}"/><path class="air" d="${loopPath(LOOPS.outer,pt)}"/>`+dimLine(sp,ep,fs*0.5/m)+`</g></g>`;
+  q+=`<circle cx="${n3(icS[0])}" cy="${n3(icS[1])}" r="${n3(R)}" fill="none" class="inset-bg" style="fill:none"/>`;
+  q+=`<text x="${n3(icS[0])}" y="${n3(icS[1]-R-u*0.6)}" font-size="${n3(fs*0.78)}" stroke-width="${n3(hw)}" text-anchor="middle">Detail at Q′ ×${m.toFixed(0)}</text>`;
+  q+=lab([ic[0],ic[1]-R-u*1.2],"magnet_glue_gap",f2(gap),"middle",fs,hw);
+  return grp("magnet_glue_gap",q);
+}
+function arrowHead(tip,ux,uy,sz){const bx=tip[0]-ux*sz,by=tip[1]-uy*sz,nx=-uy*sz*0.32,ny=ux*sz*0.32;return`<path class="ah" d="M${n3(tip[0])} ${n3(tip[1])}L${n3(bx+nx)} ${n3(by+ny)}L${n3(bx-nx)} ${n3(by-ny)}Z"/>`}
+function dimLine(m1,m2,sz){const a=S(m1),b=S(m2),dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy);if(!(L>1e-9))return"";const ux=dx/L,uy=dy/L;
+  return`<line x1="${n3(a[0])}" y1="${n3(a[1])}" x2="${n3(b[0])}" y2="${n3(b[1])}"/>`+arrowHead(a,-ux,-uy,Math.min(sz,L*0.45))+arrowHead(b,ux,uy,Math.min(sz,L*0.45))}
+function ext(m1,m2){const a=S(m1),b=S(m2);return`<line class="ext" x1="${n3(a[0])}" y1="${n3(a[1])}" x2="${n3(b[0])}" y2="${n3(b[1])}"/>`}
+function lab(m,name,val,anchor,fs,hw,dyLines=0){const q=S(m);return`<text x="${n3(q[0])}" y="${n3(q[1])}" font-size="${n3(fs*0.82)}" stroke-width="${n3(hw)}" text-anchor="${anchor}"><tspan x="${n3(q[0])}" dy="${dyLines}em">${name}</tspan><tspan x="${n3(q[0])}" dy="1.15em" font-weight="600">${val}</tspan></text>`}
+function grp(id,inner){return`<g class="dim${hot===id?" hot":""}" id="dim-${id}">${inner}</g>`}
+
+function dims(g,u,fs,hw){
+  const p=g.p,pt=g.pt,rr=g.rr,sz=fs*0.55;let s="";
+  const w=Math.max(rr*g.Sn,p.magnet_Y,p.magnet_Z,g.ho,Math.abs(pt.P[0]));
+  // magnet_opening
+  {const yo=rr+u*2.4;s+=grp("magnet_opening",ext(pt.C,[-g.ho,yo+u*0.6])+ext(pt["C'"],[g.ho,yo+u*0.6])+dimLine([-g.ho,yo],[g.ho,yo],sz)+lab([0,yo+u*2.6],"magnet_opening",f2(p.magnet_opening),"middle",fs,hw))}
+  // depth + inset chain (right)
+  {const xr=w+u*2;
+   s+=grp("magnet_depth",ext(pt["P'"],[xr+u*0.6,g.rim])+ext(pt["R'"],[xr+u*0.6,g.rom])+dimLine([xr,g.rim],[xr,g.rom],sz)+lab([xr+u*0.8,(g.rim+g.rom)/2],"magnet_depth",f2(p.magnet_depth),"start",fs,hw,-0.3));
+   s+=grp("magnet_inset",ext([0,rr],[xr+u*0.6,rr])+dimLine([xr,g.rom],[xr,rr],sz)+lab([xr+u*0.8,rr+u*1.2],"magnet_inset",f2(p.magnet_inset),"start",fs,hw,-0.3));}
+  // magnet_X (left)
+  {const xl=-Math.max(p.magnet_Y,Math.abs(pt.P[0]),p.magnet_Z)-u*2.2;
+   s+=grp("magnet_X",ext(pt.P,[xl-u*0.6,g.rim])+ext(pt.Q,[xl-u*0.6,pt.Q[1]])+dimLine([xl,g.rim],[xl,pt.Q[1]],sz)+lab([xl-u*0.8,g.rim+p.magnet_X/2],"magnet_X",f2(p.magnet_X),"end",fs,hw,-0.3));}
+  // bridge_offset (left, low)
+  {const xb=Math.min(pt.A[0],pt.G[0])-u*2.2;
+   s+=grp("bridge_offset",ext(pt.F,[xb-u*0.6,g.rs])+ext(pt.G,[xb-u*0.6,g.yg])+dimLine([xb,g.rs],[xb,g.yg],sz)+lab([xb-u*0.8,(g.rs+g.yg)/2],"bridge_offset",f2(p.bridge_offset),"end",fs,hw,-0.3));}
+  // magnet_Y / magnet_Z on the primed half
+  s+=grp("magnet_Y",dimLine([0,pt.Q[1]],[p.magnet_Y,pt.Q[1]],sz)+lab([p.magnet_Y/2,pt.Q[1]+u*2.4],"magnet_Y",f2(p.magnet_Y),"middle",fs,hw));
+  {const yz=g.rom-u*1.6;s+=grp("magnet_Z",ext(pt["R'"],[p.magnet_Z,yz-u*0.5])+dimLine([0,yz],[p.magnet_Z,yz],sz)+lab([p.magnet_Z/2,yz-u*0.9],"magnet_Z",f2(p.magnet_Z),"middle",fs,hw))}
+  // Bridge_thickness across the left pole-piece axis
+  {const M=[(pt.P[0]+pt.G[0])/2,(pt.P[1]+pt.G[1])/2],ub=polar(1,90+g.half),d=M[0]*ub[0]+M[1]*ub[1],F=[ub[0]*d,ub[1]*d],M2=[2*F[0]-M[0],2*F[1]-M[1]];
+   const nx=M2[0]-M[0],ny=M2[1]-M[1],nl=Math.hypot(nx,ny)||1;
+   const L1=[M2[0]+nx/nl*u*0.8,M2[1]+ny/nl*u*0.8];
+   s+=grp("Bridge_thickness",dimLine(M,M2,Math.min(sz,g.t*0.9+1e-6))+ext(M2,L1)+lab([L1[0]-u*0.4,L1[1]+u*2.2],"Bridge_thickness",f2(p.Bridge_thickness),"end",fs,hw))}
+  // shaft_diameter (overlay arc + label)
+  {const a1=S(pt["A'"]);s+=grp("shaft_diameter",`<path class="ov" d="${Mv(pt["A'"])}${Av(pt["A'"],pt.A)}"/>`+lab([pt["A'"][0]+u*0.8,pt["A'"][1]-u*1.8],"Ø shaft_diameter",f2(p.shaft_diameter),"start",fs,hw))}
+  // rotor_diameter (overlay OD + label)
+  {const lp=polar(rr+u*1.2,90+g.half);s+=grp("rotor_diameter",`<path class="ov" d="${Mv(pt.B)}${Av(pt.B,pt["B'"])}"/>`+lab([lp[0]-u*0.4,lp[1]+u*0.8],"Ø rotor_diameter",f2(p.rotor_diameter),"end",fs,hw,-0.6))}
+  // pole pitch arc
+  {const rP=Math.max(g.rs-u*2.2,u),a0=polar(rP,90-g.half),a1=polar(rP,90+g.half);
+   const e0=S(a0),e1=S(a1);
+   let q=`<line class="ext" x1="${n3(S(polar(g.rs,90-g.half))[0])}" y1="${n3(S(polar(g.rs,90-g.half))[1])}" x2="${n3(e0[0])}" y2="${n3(e0[1])}"/><line class="ext" x1="${n3(S(polar(g.rs,90+g.half))[0])}" y1="${n3(S(polar(g.rs,90+g.half))[1])}" x2="${n3(e1[0])}" y2="${n3(e1[1])}"/>`;
+   q+=`<path class="arc" d="${Mv(a0)}${Av(a0,a1)}"/>`;
+   const f0=rad(90-g.half),f1=rad(90+g.half);
+   q+=arrowHead(e0,Math.sin(f0),Math.cos(f0),sz)+arrowHead(e1,-Math.sin(f1),-Math.cos(f1),sz);
+   q+=lab([0,rP-u*1.4],"360/pole_number",f2(g.pitch)+"°","middle",fs,hw);
+   s+=grp("pole_number",q)}
+  return s;
+}
+
+/* ============================================================
+   Full view
+   ============================================================ */
+function renderFull(g){
+  const svg=$("#fullSvg"),p=g.p;
+  if(!allFinite(g.pt)){svg.setAttribute("viewBox","0 0 100 40");svg.innerHTML=`<text class="svgmsg" x="50" y="20" text-anchor="middle" font-size="4">Geometry cannot be constructed</text>`;return}
+  const R=g.rr*1.04;
+  svg.setAttribute("viewBox",`${n3(-R)} ${n3(-R)} ${n3(2*R)} ${n3(2*R)}`);
+  let s="";
+  let k0="";
+  const L=Math.max(Math.min(p.magnet_Y,p.magnet_Z,g.floorW/2)*0.75,0.5);
+  for(let k=0;k<p.pole_number;k++){
+    const ang=k*g.pitch+p.rotation_angle_deg,rp=rotPts(g.pt,ang);
+    const lp=loopPath(LOOPS.rotor,rp);
+    s+=`<path class="lam" d="${lp}"/><path class="glue" d="${loopPath(LOOPS.slot,rp)}"/><path class="${k%2?"ms":"mn"}" d="${loopPath(LOOPS.magnet,rp)}"/><path class="air" d="${loopPath(LOOPS.outer,rp)}"/><path class="air" d="${loopPath(LOOPS.inner,rp)}"/>`;
+    const c=S(rot([0,(g.rim+g.rom)/2],ang)),dv=rot([k%2?-1:1,0],ang),dx=dv[0],dy=-dv[1];
+    const a=[c[0]-dx*L,c[1]-dy*L],b=[c[0]+dx*L,c[1]+dy*L];
+    s+=`<line class="mag-arrow" x1="${n3(a[0])}" y1="${n3(a[1])}" x2="${n3(b[0])}" y2="${n3(b[1])}"/>`+arrowHead(b,dx,dy,L*0.7).replace('class="ah"','class="mag-head"');
+    if(k===0)k0=lp;
+  }
+  s+=`<circle class="shaft" cx="0" cy="0" r="${n3(g.rs)}"/>`;
+  s+=`<path class="k0" d="${k0}"/>`;
+  svg.innerHTML=s;
+}
+
+/* ============================================================
+   Checks + derived
+   ============================================================ */
+function renderChecks(g){
+  const grpName={script:"Script checks (ValueError)",geometry:"Geometry checks the script misses",warning:"Manufacturing warnings (rule of thumb)",reference:"Reference consistency"};
+  let h="",cur="";
+  for(const c of CHECKS){
+    if(c.src!==cur){if(cur)h+="</ul>";cur=c.src;h+=`<h4>${grpName[c.src]}</h4><ul class="chk">`}
+    const ok=pass(c,g);
+    const cls=ok?"pass":c.lvl==="hard"?"fail":c.lvl==="warn"?"warn":"info";
+    const sym=ok?"✓":c.lvl==="hard"?"✕":"!";
+    h+=`<li class="${cls}"><b aria-label="${ok?"pass":"fail"}">${sym}</b><span><code>${c.f}</code>${c.why?` — ${c.why}`:""}</span><small>${c.v(g)}</small></li>`;
+  }
+  $("#chk").innerHTML=h+"</ul>";
+  const bad=HARD.filter(c=>!pass(c,g));
+  const al=$("#secAlert");
+  if(bad.length){al.classList.add("on");al.textContent=`${bad.length} hard limit${bad.length>1?"s":""} failing — the shape may self-intersect or the script will raise.`}else al.classList.remove("on");
+}
+function renderMass(g){
+  const p=g.p,kg=v=>Number.isFinite(v)?(v).toFixed(3):"—",gm=v=>Number.isFinite(v)?(v*1000).toFixed(1):"—";
+  const fm=g.totalMass>0?g.magMass/g.totalMass:0;
+  $("#mass").innerHTML=`<p class="mass-big">${kg(g.totalMass)}<small>kg</small></p>
+   <p class="mass-sub">Lamination + magnets, ${f2(p.stack_length)} mm stack. Shaft and glue excluded.</p>
+   <div class="mbar" aria-hidden="true"><i style="width:${(1-fm)*100}%;background:var(--steel)"></i><i style="width:${fm*100}%;background:var(--magn)"></i></div>
+   <table>
+    <tr><th>Item</th><th style="text-align:right">Rotor</th><th style="text-align:right">Per pole</th></tr>
+    <tr><td>Lamination</td><td class="n">${kg(g.lamMass)} kg</td><td class="n">${gm(g.lamMass/p.pole_number)} g</td></tr>
+    <tr><td>Magnets</td><td class="n">${kg(g.magMass)} kg</td><td class="n">${gm(g.magMass/p.pole_number)} g</td></tr>
+    <tr><td>Magnet share</td><td class="n">${(fm*100).toFixed(1)} %</td><td></td></tr>
+    <tr><td>Mass per mm stack</td><td class="n">${gm(g.totalMass/p.stack_length)} g</td><td></td></tr>
+    <tr><td>Lamination area</td><td class="n">${f2(g.lamArea*p.pole_number)} mm²</td><td class="n">${f2(g.lamArea)} mm²</td></tr>
+    <tr><td>Magnet area</td><td class="n">${f2(g.magArea*p.pole_number)} mm²</td><td class="n">${f2(g.magArea)} mm²</td></tr>
+   </table>`;
+}
+function renderDerived(g){
+  const p=g.p,rows=[
+    ["Pole pitch θ",f2(g.pitch),"°"],
+    ["r_r / r_om / r_im / r_s",`${f2(g.rr)} / ${f2(g.rom)} / ${f2(g.rim)} / ${f2(g.rs)}`,"mm"],
+    ["Magnet width floor / bulge / top",`${f2(g.floorW)} / ${f2(g.bulgeW)} / ${f2(g.topW)}`,"mm"],
+    ["Slot width floor / bulge / top",`${f2(g.slotFloorW)} / ${f2(2*p.magnet_Y)} / ${f2(2*p.magnet_Z)}`,"mm"],
+    ["Glue area per pole",f2(g.glueArea),"mm²"],
+    ["Magnet area per pole",f2(g.magArea),"mm²"],
+    ["Lamination area per pole",f2(g.lamArea),"mm²"],
+    ["Pole neck at Q / at R",`${f2(g.neckQ)} / ${f2(g.neckR)}`,"mm"],
+    ["Web length G → P",f2(g.webLen),"mm"],
+    ["Hub under pocket |G| − r_s",f2(g.hub),"mm"],
+    ["Pocket floor width 2|G_x|",f2(g.baseW),"mm"],
+    ["Iron over magnet corner r_r − |R|",f2(g.topIron),"mm"],
+    ["Lip width Z − opening/2",f2(g.lipW),"mm"],
+    ["Lip depth at mouth C_y − r_om",f2(g.lipH),"mm"],
+    ["Slot mouth angle",f2(g.mouthDeg),"°"],
+    ["Pole arc ratio",f3(g.poleArc),""]
+  ];
+  $("#der").innerHTML=`<tr><th>Quantity</th><th style="text-align:right">Value</th><th></th></tr>`+rows.map(r=>`<tr><td>${r[0]}</td><td class="n">${r[1]}</td><td>${r[2]}</td></tr>`).join("");
+}
+
+/* ============================================================
+   Swept ranges on sliders
+   ============================================================ */
+function sweep(s,N){
+  const n=Math.max(1,Math.round((s.hi-s.lo)/s.st)),M=Math.min(n,N);const out=[];
+  for(let i=0;i<=M;i++){let v=s.lo+(s.hi-s.lo)*i/M;if(s.int)v=s.lo+Math.round((v-s.lo)/s.st)*s.st;const q=Object.assign({},P);q[s.k]=v;const g=build(q);out.push({v,ok:feasible(g),g})}
+  return out;
+}
+function runs(sw){const r=[];let st=null;sw.forEach((o,i)=>{if(o.ok&&st===null)st=i;if((!o.ok||i===sw.length-1)&&st!==null){const e=o.ok?i:i-1;r.push([sw[st].v,sw[e].v]);st=null}});return r}
+const dec=s=>Math.max(0,(String(s.st).split(".")[1]||"").length);
+function renderRanges(){
+  for(const s of SPEC){
+    if(s.ref||s.nosweep){continue}
+    const sw=sweep(s,240),rr=runs(sw),span=s.hi-s.lo,band=$("#b_"+s.k),fr=$("#f_"+s.k);
+    band.innerHTML=rr.map(([a,b])=>{const l=(a-s.lo)/span*100,w=Math.max((b-a)/span*100,0.8);return`<span style="left:${l}%;width:${w}%"></span>`}).join("");
+    if(rr.length){fr.classList.remove("none");fr.textContent="feasible ≈ "+rr.map(([a,b])=>`${a.toFixed(dec(s))} – ${b.toFixed(dec(s))}`).join(", ")+(s.u?" "+s.u:"")}
+    else{fr.classList.add("none");fr.textContent="no feasible value with the others fixed"}
+  }
+  const g=build(P),bad=!feasible(g);
+  document.querySelectorAll(".prm").forEach(r=>r.classList.toggle("bad",bad&&!SPECMAP[r.dataset.k].ref&&!SPECMAP[r.dataset.k].nosweep));
+}
+
+/* ============================================================
+   Doc tables
+   ============================================================ */
+function renderDocTables(g){
+  const p=g.p;
+  const FORM={A:"polar_xy(r_s, left_boundary_deg)",B:"polar_xy(r_r, left_boundary_deg)",C:"(−half_opening, √(r_r² − half_opening²))",D:"(−half_opening, r_om)",R:"(−magnet_Z, r_om)",Q:"(−magnet_Y, r_im + magnet_X)",P:"(−(r_im·tan(θ/2) − t/cos(θ/2)), r_im)",E:"polar_xy(r_im, 90°)",F:"polar_xy(r_s, 90°)",G:"(−(y_G·tan(θ/2) − t/cos(θ/2)), y_G)"};
+  const ROLE={A:"Shaft end of pole-piece axis",B:"OD end of pole-piece axis",C:"Slot mouth corner on OD",D:"Mouth bottom, lip start",R:"Magnet top corner",Q:"Magnet bulge",P:"Magnet floor corner on web line",E:"Construction only",F:"Construction only",G:"Pocket floor corner on web line"};
+  $("#ttab").innerHTML=`<tr><th>Point</th><th>Formula</th><th>Role</th><th style="text-align:right">x</th><th style="text-align:right">y</th><th style="text-align:right">|r|</th><th style="text-align:right">∠</th></tr>`+
+   PRINT_ORDER.map(k=>{const b=k.replace("'",""),pr=k.includes("'"),q=rot(g.pt[k],p.rotation_angle_deg);
+    return`<tr><td><code>${b}${pr?"′":""}</code></td><td><code>${pr?"mirror("+b+")":FORM[b]}</code></td><td>${ROLE[b]}</td><td class="n">${f3(q[0])}</td><td class="n">${f3(q[1])}</td><td class="n">${f3(hyp(q))}</td><td class="n">${f2(deg(Math.atan2(q[1],q[0])))}°</td></tr>`}).join("")+
+   [["Pm","offset(P–Q, gap) ∩ y = r_im","Magnet floor corner (glue)"],["Qm","offset(P–Q, gap) ∩ offset(Q–R, gap)","Magnet bulge (glue)"],["Rm","offset(Q–R, gap) ∩ y = r_om","Magnet top corner (glue)"]].map(([k,f,r])=>{const q=rot(g.pt[k],p.rotation_angle_deg);
+    return`<tr><td><code>${k.replace("m","_m")}</code></td><td><code>${f}</code></td><td>${r}</td><td class="n">${f3(q[0])}</td><td class="n">${f3(q[1])}</td><td class="n">${f3(hyp(q))}</td><td class="n">${f2(deg(Math.atan2(q[1],q[0])))}°</td></tr>`}).join("");
+  $("#cftab").innerHTML=`<tr><th>Parameter</th><th>Bound</th><th style="text-align:right">Min</th><th style="text-align:right">Max</th><th style="text-align:right">Now</th></tr>`+
+   CF.map(c=>{const[a,b]=c.f(g),v=P[c.k],ok=v>a&&v<b;return`<tr><td><code>${c.k}</code></td><td><code>${c.e}</code></td><td class="n">${f2(a)}</td><td class="n">${f2(b)}</td><td class="n" style="color:var(${ok?"--ok":"--bad"})">${f2(v)}</td></tr>`}).join("");
+}
+
+/* ============================================================
+   Sensitivity charts
+   ============================================================ */
+const OUTS=[
+ {k:"totalMass",n:"Rotor mass",u:"kg"},
+ {k:"magMass",n:"Magnet mass",u:"kg"},
+ {k:"lamMass",n:"Lamination mass",u:"kg"},
+ {k:"neck",n:"Pole neck, minimum",u:"mm"},
+ {k:"topIron",n:"Iron over magnet corner",u:"mm"},
+ {k:"hub",n:"Hub under pocket",u:"mm"}
+];
+function renderCharts(){
+  const k=$("#sensSel").value,s=SPECMAP[k],sw=sweep(s,160),cur=P[k];
+  const W=320,H=170,x0=44,x1=310,y0=14,y1=140,sx=v=>x0+(v-s.lo)/(s.hi-s.lo)*(x1-x0);
+  const now=build(P);
+  $("#charts").innerHTML=OUTS.map(o=>{
+    const ys=sw.map(r=>r.g[o.k]).filter(Number.isFinite);
+    let lo=Math.min(...ys),hi=Math.max(...ys);if(!(hi>lo)){hi=(lo||1)*1.1+1e-6;lo=lo-1e-6}
+    const pad=(hi-lo)*0.08;lo-=pad;hi+=pad;const sy=v=>y1-(v-lo)/(hi-lo)*(y1-y0);
+    let bg="";runs(sw).forEach(([a,b])=>{bg+=`<rect class="c-feas" x="${sx(a).toFixed(1)}" y="${y0}" width="${Math.max(sx(b)-sx(a),1.5).toFixed(1)}" height="${y1-y0}"/>`});
+    let dAll="",dOk="",pen=false,penOk=false;
+    sw.forEach(r=>{const v=r.g[o.k];if(!Number.isFinite(v)){pen=false;penOk=false;return}
+      const X=sx(r.v).toFixed(1),Y=sy(v).toFixed(1);dAll+=(pen?"L":"M")+X+" "+Y;pen=true;
+      if(r.ok){dOk+=(penOk?"L":"M")+X+" "+Y;penOk=true}else penOk=false});
+    const zero=lo<0&&hi>0?`<line class="c-zero" x1="${x0}" x2="${x1}" y1="${sy(0).toFixed(1)}" y2="${sy(0).toFixed(1)}"/>`:"";
+    const cv=now[o.k],cx=sx(Math.min(Math.max(cur,s.lo),s.hi));
+    const dot=Number.isFinite(cv)?`<circle class="c-dot" cx="${cx.toFixed(1)}" cy="${sy(cv).toFixed(1)}" r="3.5"/>`:"";
+    return`<div class="chart"><h4>${o.n}${o.u?` <span class="mono" style="color:var(--ink2)">${o.u}</span>`:""}</h4><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${o.n} versus ${k}">${bg}
+      <line class="c-ax" x1="${x0}" x2="${x1}" y1="${y1}" y2="${y1}"/><line class="c-ax" x1="${x0}" x2="${x0}" y1="${y0}" y2="${y1}"/>${zero}
+      <path class="c-bad" d="${dAll}"/><path class="c-line" d="${dOk}"/>
+      <line class="c-now" x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="${y0}" y2="${y1}"/>${dot}
+      <text class="c-t" x="${x0-4}" y="${y0+8}" text-anchor="end">${hi.toPrecision(3)}</text><text class="c-t" x="${x0-4}" y="${y1}" text-anchor="end">${lo.toPrecision(3)}</text>
+      <text class="c-t" x="${x0}" y="${y1+14}">${s.lo}</text><text class="c-t" x="${x1}" y="${y1+14}" text-anchor="end">${s.hi}</text>
+      <text class="c-t" x="${(x0+x1)/2}" y="${y1+26}" text-anchor="middle">${k}</text></svg></div>`}).join("");
+}
+
+/* ============================================================
+   Controls
+   ============================================================ */
+function buildControls(){
+  const c=$("#ctl");let h=`<div class="ctl-top"><span id="chgCount">Default design</span><button class="btn" id="reset" type="button">Reset all</button></div>`;
+  for(const s of SPEC){
+    if(s.g)h+=`<h3>${s.g}</h3>`;
+    h+=`<div class="prm" data-k="${s.k}"><div class="prm-h"><label for="r_${s.k}"><code>${s.k}</code></label><button class="rs" type="button" data-k="${s.k}" title="Reset ${s.k} to ${s.v}">↺ ${s.v}</button><span class="num"><input type="number" id="n_${s.k}" step="${s.st}" value="${s.v}" aria-label="${s.k} value"><i>${s.u}</i></span></div>
+     <div class="trk"><div class="band" id="b_${s.k}"></div><input type="range" id="r_${s.k}" min="${s.lo}" max="${s.hi}" step="${s.st}" value="${s.v}"></div>
+     <p class="hint">${s.d}</p>${s.ref||s.nosweep?"":`<p class="fr" id="f_${s.k}"></p>`}</div>`;
+  }
+  h+=`<p class="note">Green band under a slider = values where every hard limit passes, others held fixed. ↺ appears next to any value you changed and restores its default.</p>`;
+  c.innerHTML=h;
+  c.querySelectorAll(".prm").forEach(row=>{
+    const k=row.dataset.k,r=row.querySelector('input[type=range]'),n=row.querySelector('input[type=number]');
+    r.addEventListener("input",()=>{P[k]=+r.value;n.value=r.value;update()});
+    n.addEventListener("change",()=>{const v=parseFloat(n.value);if(!Number.isFinite(v)){n.value=P[k];return}P[k]=v;r.value=v;update()});
+    const on=()=>{if(hot!==k){hot=k;applyHot()}},off=()=>{hot=null;applyHot()};
+    row.addEventListener("mouseenter",on);row.addEventListener("mouseleave",off);
+    row.addEventListener("focusin",on);row.addEventListener("focusout",off);
+  });
+  $("#reset").addEventListener("click",resetAll);
+  $("#resetSec").addEventListener("click",resetAll);
+  c.querySelectorAll(".rs").forEach(b=>b.addEventListener("click",()=>setVal(b.dataset.k,DEF[b.dataset.k])));
+}
+function setVal(k,v){P[k]=v;$("#r_"+k).value=v;$("#n_"+k).value=v;update()}
+function resetAll(){Object.assign(P,DEF);SPEC.forEach(s=>{$("#r_"+s.k).value=s.v;$("#n_"+s.k).value=s.v});update()}
+function markChanged(){let n=0;document.querySelectorAll(".prm").forEach(r=>{const c=P[r.dataset.k]!==DEF[r.dataset.k];r.classList.toggle("changed",c);if(c)n++});
+  $("#chgCount").textContent=n?`${n} value${n>1?"s":""} changed`:"Default design";$("#reset").disabled=!n;$("#resetSec").disabled=!n}
+function applyHot(){document.querySelectorAll("#secSvg .dim").forEach(el=>el.classList.toggle("hot",el.id==="dim-"+hot))}
+
+/* ============================================================
+   Update
+   ============================================================ */
+let raf=0;
+function update(){cancelAnimationFrame(raf);raf=requestAnimationFrame(()=>{
+  const g=build(P);
+  renderSection(g);renderFull(g);renderChecks(g);renderMass(g);renderDerived(g);renderRanges();renderDocTables(g);renderCharts();markChanged();
+})}
+
+buildControls();
+const sel=$("#sensSel");
+SPEC.filter(s=>!s.ref&&!s.nosweep).forEach(s=>{const o=document.createElement("option");o.value=s.k;o.textContent=s.k;sel.appendChild(o)});
+sel.value="magnet_Y";sel.addEventListener("change",renderCharts);
+document.querySelectorAll('input[name=loop]').forEach(r=>r.addEventListener("change",()=>{loopSel=r.value;renderSection(build(P))}));
+["#tgPts","#tgDim","#tgCon"].forEach(id=>$(id).addEventListener("change",()=>renderSection(build(P))));
+document.querySelectorAll(".loop button").forEach(b=>b.addEventListener("click",()=>{
+  const v=b.dataset.loop;const r=document.querySelector(`input[name=loop][value=${v}]`);r.checked=true;loopSel=v;renderSection(build(P));
+  $(".sec").scrollIntoView({behavior:reduceMotion?"auto":"smooth",block:"start"});
+}));
+update();
+</script>
+</body>
+</html>
