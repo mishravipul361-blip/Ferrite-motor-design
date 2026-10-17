@@ -72,11 +72,11 @@ CORR = Corr()
 _FCACHE = {}
 
 
-def fields(sv, s, npts):
+def fields(sv, s, npts, G=None):
     """Field quantities on the actual-current grid (path peak A, radius I_PATH_PK), cached per variant and turns."""
-    key = (sv, round(s, 6), npts)
+    key = (sv, round(s, 6), npts) if G is None else (sv, round(s, 6), 'G', G[0].tobytes(), G[1].tobytes())
     if key not in _FCACHE:
-        i_d, i_q = BASE.grid(npts)
+        i_d, i_q = BASE.grid(npts) if G is None else G
         Pt0 = np.column_stack([s * i_d, s * i_q])
         V = BASE._fields(Pt0)
         Wi = {k: np.maximum(BASE._slice_avg(fn, Pt0), 0) for k, fn in BASE.I.items()}
@@ -119,8 +119,8 @@ class Design:
         st = self.geo['st_mass'] * self.kL
         return dict(winding=wdg, stator_lam=st, rotor_lam=rl, magnets=mg, active=wdg + st + rl + mg, conductor_area_mm2=self.A * 1e6, mlt_mm=self.mlt * 1e3)
 
-    def evaluate(self, n, npts=121):
-        i_d, i_q, Pt0, V, Wi, C = fields(self.sv, self.s, npts)
+    def evaluate(self, n, npts=121, G=None):
+        i_d, i_q, Pt0, V, Wi, C = fields(self.sv, self.s, npts, G)
         s, kL = self.s, self.kL
         psd0 = kL * (V['psid'] + C['dpsid']); psq0 = kL * (V['psiq'] + C['dpsiq'])
         Tem = 1.5 * P * (psd0 * 2 * Pt0[:, 1] - psq0 * 2 * Pt0[:, 0])            # Motor-CAD Lab torque, ampere-turn invariant
@@ -144,7 +144,8 @@ class Design:
         with np.errstate(invalid='ignore', divide='ignore'):
             eff = np.where(psh > 0, 100 * psh / pin, np.nan)
         return dict(Tsh=Tsh, Tem=Tem, psh=psh, eff=eff, v=v, Ipk=Ipk, I_line=Ipk * 2 * math.sqrt(3) / math.sqrt(2), pcu=pcu, pac=pac,
-                    pfe_st=st_h + st_e, pfe_rot=rt_h + rt_e, pfe=pfe, pme=np.full_like(Tem, pme), loss=loss, pin=pin, Idc=pin / L.VDC)
+                    pfe_st=st_h + st_e, pfe_rot=rt_h + rt_e, pfe_st_h=st_h, pfe_st_e=st_e, pfe_rot_h=rt_h, pfe_rot_e=rt_e,
+                    psid=psd, psiq=psq, vd=vd, vq=vq, id=i_d, iq=i_q, pfe=pfe, pme=np.full_like(Tem, pme), loss=loss, pin=pin, Idc=pin / L.VDC)
 
     @staticmethod
     def feasible(R):

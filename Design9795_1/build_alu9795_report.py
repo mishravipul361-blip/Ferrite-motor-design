@@ -269,6 +269,80 @@ rec, alt, mn, dr = BY[REC], BY[ALT], BY[MINR], BY[DROP]
 sv_ = lambda d: -A.dcost(d)
 pct = lambda d: -100 * A.dcost(d) / CU['cost']['total']
 VE = vmax()
+
+# ---------------- operating points OP1-OP3 ----------------
+OPJ = json.load(open(os.path.join(H, 'alu9795_ops.json')))
+ODN = list(OPJ['designs'])
+LK = [('cu_dc', 'DC winding', '#b45309'), ('cu_ac', 'AC winding', '#f59e0b'), ('st_hyst', 'Stator hysteresis', '#475569'),
+      ('st_eddy', 'Stator eddy', '#94a3b8'), ('rot', 'Rotor iron', '#7c3aed'), ('mech', 'Bearings + windage', '#0f766e')]
+fig, ax = plt.subplots(1, 3, figsize=(13, 3.8))
+for a, opk in zip(ax, ('OP1', 'OP2', 'OP3')):
+    left = np.zeros(len(ODN))
+    for key, nm, col in LK:
+        v = np.array([(OPJ['designs'][n]['ops'][opk]['loss']['rot_hyst'] + OPJ['designs'][n]['ops'][opk]['loss']['rot_eddy']) if key == 'rot'
+                      else OPJ['designs'][n]['ops'][opk]['loss'][key] for n in ODN])
+        a.barh(ODN, v, left=left, color=col, height=.62, label=nm, edgecolor='white', lw=1.5); left += v
+    for k, n in enumerate(ODN):
+        r = OPJ['designs'][n]['ops'][opk]
+        a.text(left[k] + 15, k, '%.0f W · %.2f %%' % (r['loss']['total'], r['eff']), va='center', fontsize=8)
+    a.set_xlim(0, left.max() * 1.42); a.invert_yaxis(); a.grid(axis='y', alpha=0); a.set_xlabel('Loss (W)')
+    a.set_title('%s: %s' % (opk, OPJ['ops'][opk]), loc='left', fontsize=10)
+    if opk != 'OP1':
+        a.set_yticklabels([])
+h_, l_ = ax[0].get_legend_handles_labels(); fig.legend(h_, l_, loc='outside lower center', ncol=6, fontsize=8)
+F_OPS = png(fig)
+
+
+def op_table(opk):
+    cols = ([('Motor-CAD, copper', OPJ['mcad_copper'][opk])] if opk in OPJ['mcad_copper'] else []) + [(n, OPJ['designs'][n]['ops'][opk]) for n in ODN]
+
+    def row(name, fn, hl=False):
+        cells = []
+        for _, r in cols:
+            try:
+                cells.append(fn(r))
+            except KeyError:
+                cells.append('—')
+        return '<tr%s><td>%s</td>%s</tr>' % (' class="hl"' if hl else '', name, ''.join('<td>%s</td>' % c for c in cells))
+    L_ = lambda r: r['loss']
+    rot = lambda r: L_(r)['rot'] if 'rot' in L_(r) else L_(r)['rot_hyst'] + L_(r)['rot_eddy']
+    stl = lambda r: L_(r)['st'] if 'st' in L_(r) else L_(r)['st_hyst'] + L_(r)['st_eddy']
+    out = '<thead><tr><th>%s</th>%s</tr></thead><tbody>' % (opk, ''.join('<th>%s</th>' % n for n, _ in cols))
+    out += row('Speed (rpm)', lambda r: '%.0f' % r['speed'])
+    out += row('Shaft torque (N·m)', lambda r: '%.2f' % r['T_shaft'], True)
+    out += row('Electromagnetic torque (N·m)', lambda r: '%.2f' % r['T_em'])
+    out += row('Shaft power (W)', lambda r: '%.0f' % r['P_shaft'])
+    out += row('Input power (W)', lambda r: '%.0f' % r['P_in'])
+    out += row('Efficiency (%)', lambda r: '%.2f' % r['eff'], True)
+    out += row('Line current (A rms)', lambda r: '%.1f' % r['I_line_rms'])
+    out += row('Phase current (A rms, delta)', lambda r: '%.1f' % r['I_phase_rms'])
+    out += row('Id, phase (A peak)', lambda r: '%.1f' % r['Id_phase_pk'])
+    out += row('Iq, phase (A peak)', lambda r: '%.1f' % r['Iq_phase_pk'])
+    out += row('Phase advance (° el)', lambda r: '%.1f' % r['phase_advance'], True)
+    out += row('Phase voltage (V peak; limit %.1f)' % OPJ['designs'][ODN[0]]['ops'][opk]['V_limit'], lambda r: '%.2f' % r['V_phase_pk'])
+    out += row('Power factor', lambda r: '%.3f' % r['pf'])
+    out += row('ψd (mV·s)', lambda r: '%.2f' % r['psid_mVs'])
+    out += row('ψq (mV·s)', lambda r: '%.2f' % r['psiq_mVs'])
+    out += row('DC bus current (A)', lambda r: '%.1f' % r['Idc'])
+    out += row('Current density (A/mm² rms)', lambda r: '%.1f' % r['J'])
+    out += row('Active limit', lambda r: r['limit'])
+    out += row('DC winding loss (W)', lambda r: '%.1f' % L_(r)['cu_dc'], True)
+    out += row('AC winding loss (W)', lambda r: '%.1f' % L_(r)['cu_ac'], True)
+    out += row('Stator iron, hysteresis (W)', lambda r: '%.1f' % L_(r)['st_hyst'])
+    out += row('Stator iron, eddy (W)', lambda r: '%.1f' % L_(r)['st_eddy'])
+    out += row('Stator iron, total (W)', lambda r: '%.1f' % stl(r), True)
+    out += row('Rotor iron (W)', lambda r: '%.1f' % rot(r), True)
+    out += row('Iron, total (W)', lambda r: '%.1f' % L_(r)['iron'])
+    out += row('Bearings + windage (W)', lambda r: '%.1f' % L_(r)['mech'], True)
+    out += row('Total loss (W)', lambda r: '%.1f' % L_(r)['total'], True)
+    return out + '</tbody>'
+
+
+def op_eff(opk, n):
+    return OPJ['designs'][n]['ops'][opk]['eff'] - OPJ['designs'][ODN[0]]['ops'][opk]['eff']
+
+
+OPD = OPJ['designs']
 CSS = open(os.path.join(H, 'report_emf', 'backemf_validation.html'), encoding='utf-8').read().split('<style>')[1].split('</style>')[0]
 CSS += """
 .wrap { max-width:1180px } tr.hl td { background:var(--ok-bg) } h3 { font:600 18px/1.25 var(--f-d); margin:20px 0 6px }
@@ -326,11 +400,29 @@ Aluminium cannot reach copper's efficiency within OD 167: the smallest range los
 <div class="tw"><table><thead><tr><th>Design</th><th>DC winding</th><th>AC winding</th><th>Iron</th><th>Bearings and windage</th><th>Total loss</th><th>Motoring efficiency (%)</th><th>Energy at terminals</th></tr></thead><tbody>{loss_rows()}</tbody></table></div>
 <p>The recommended design has more DC winding loss (higher resistance) and more iron loss (longer stack and a slightly more saturated yoke). It has less AC winding loss, because its strands are thinner than the single 2.95 mm copper wire. On this cycle the motor works mostly at light and medium load, where iron loss counts as much as winding loss. That is why making the stack longer for less resistance stops paying back beyond about 78 mm.</p>
 
-<h2>5. Aluminium price sensitivity</h2>
+<h2>5. Operating points OP1, OP2 and OP3</h2>
+<p>The three operating points of the earlier aluminium study: <strong>OP1</strong> 9000 rpm at maximum power, <strong>OP2</strong> 9339 rpm at 3.24 N·m (light-load high-speed cruise), <strong>OP3</strong> 2000 rpm at maximum torque (360 A rms line). In the earlier study OP3 was set at 44.34 N·m, the peak torque of that motor. Design9795 copper makes 44.11 N·m at 2000 rpm (Motor-CAD), so here OP3 is each design's own maximum at 360 A. Each point uses the least current that meets the torque within the 52 V, 360 A and 280 A DC limits (MTPA, with field weakening where needed). Winding and magnets are at 100 °C. Where Motor-CAD's envelope export has the point, copper is also shown as Motor-CAD computes it.</p>
+<figure><img src="{F_OPS}" alt="Loss breakdown at OP1-OP3"><figcaption>Loss breakdown at the three operating points; the label gives total loss and efficiency.</figcaption></figure>
+<div class="tw"><table><thead><tr><th>Efficiency change vs copper (points)</th>{''.join('<th>%s</th>' % n for n in ODN[1:])}</tr></thead><tbody>{''.join('<tr><td>%s: %s</td>%s</tr>' % (k, OPJ['ops'][k], ''.join('<td>%+.2f</td>' % op_eff(k, n) for n in ODN[1:])) for k in ('OP1', 'OP2', 'OP3'))}</tbody></table></div>
+<h3>OP1: 9000 rpm, maximum power</h3>
+<div class="tw"><table>{op_table('OP1')}</table></div>
+<h3>OP2: 9339 rpm, 3.24 N·m</h3>
+<div class="tw"><table>{op_table('OP2')}</table></div>
+<h3>OP3: 2000 rpm, maximum torque at 360 A</h3>
+<div class="tw"><table>{op_table('OP3')}</table></div>
+<p class="note">Torque at OP2 within +0.05 N·m of 3.24 (current grid step). Motor-CAD splits its iron loss into stator and rotor, and into hysteresis and eddy over the whole machine (OP1: hysteresis {OPJ['mcad_copper']['OP1']['loss']['hyst']:.0f} W, eddy {OPJ['mcad_copper']['OP1']['loss']['eddy']:.0f} W; OP3: {OPJ['mcad_copper']['OP3']['loss']['hyst']:.0f} W and {OPJ['mcad_copper']['OP3']['loss']['eddy']:.0f} W), so its stator rows show the total only. At OP1, FEMM's copper iron loss is lower than Motor-CAD's (the residual hysteresis gap noted in the Lab validation) and its AC loss {100 * (1 - OPD[ODN[0]]['ops']['OP1']['loss']['cu_ac'] / OPJ['mcad_copper']['OP1']['loss']['cu_ac']):.0f} % lower. Copper's efficiency is {OPD[ODN[0]]['ops']['OP1']['eff'] - OPJ['mcad_copper']['OP1']['eff']:+.2f} points against Motor-CAD at OP1 and {OPD[ODN[0]]['ops']['OP3']['eff'] - OPJ['mcad_copper']['OP3']['eff']:+.2f} at OP3.</p>
+<ul>
+<li><strong>OP1 (9000 rpm):</strong> all three aluminium designs are <em>more</em> efficient than copper ({op_eff('OP1', 'Recommended'):+.2f}, {op_eff('OP1', 'Cooler alternative'):+.2f} and {op_eff('OP1', 'Least range loss'):+.2f} points). Copper's single 2.95 mm wire has {OPD[ODN[0]]['ops']['OP1']['loss']['cu_ac']:.0f} W of AC (eddy) winding loss at 750 Hz. Aluminium's thinner strands (1.50–1.70 mm) and higher resistivity cut this to {OPD['Least range loss']['ops']['OP1']['loss']['cu_ac']:.0f}–{OPD['Recommended']['ops']['OP1']['loss']['cu_ac']:.0f} W, more than the extra DC loss. The 280 A DC limit applies, so the lower loss leaves more for the shaft.</li>
+<li><strong>OP2 (cruise):</strong> AC loss drops in the same way, and the recommended design is {op_eff('OP2', 'Recommended'):+.2f} points against copper. The longer stacks add iron loss and windage, so the least-range-loss design gains less here ({op_eff('OP2', 'Least range loss'):+.2f}).</li>
+<li><strong>OP3 (peak torque):</strong> this is where aluminium costs efficiency. DC winding loss is {OPD['Recommended']['ops']['OP3']['loss']['cu_dc']:.0f} W against copper's {OPD[ODN[0]]['ops']['OP3']['loss']['cu_dc']:.0f} W in the recommended design ({op_eff('OP3', 'Recommended'):+.2f} points), {OPD['Cooler alternative']['ops']['OP3']['loss']['cu_dc']:.0f} W in the cooler alternative ({op_eff('OP3', 'Cooler alternative'):+.2f}) and {OPD['Least range loss']['ops']['OP3']['loss']['cu_dc']:.0f} W in the least-range-loss design ({op_eff('OP3', 'Least range loss'):+.2f}, at {100 * (OPD['Least range loss']['ops']['OP3']['T_shaft'] / OPD[ODN[0]]['ops']['OP3']['T_shaft'] - 1):+.1f} % torque). The drop-in loses {-op_eff('OP3', 'Drop-in'):.1f} points.</li>
+</ul>
+<p>Over the telematics cycle (section 4 table), the AC winding loss saved by aluminium is smaller than the extra DC winding loss and iron loss, so the range change stays negative even though aluminium wins at OP1 and OP2.</p>
+
+<h2>6. Aluminium price sensitivity</h2>
 <div class="tw"><table><thead><tr><th>Design</th><th>Saving, Al ₹230/kg</th><th>Saving, Al ₹370/kg (base)</th><th>Saving, Al ₹450/kg</th></tr></thead><tbody>{price_rows()}</tbody></table></div>
 <p class="note">Base ₹370/kg = copper ₹1100 ÷ 3.0 (Indian enamelled aluminium wire is quoted at 2.6–3× below copper; on the metal alone, LME, the ratio is about 4.8×). Aluminium wire is only about 8 % of the motor's material cost, so its price moves the saving by about ±₹100. The ranking of the designs does not change.</p>
 
-<h2>6. Complete list of changes (recommended design)</h2>
+<h2>7. Complete list of changes (recommended design)</h2>
 <dl>
 <dt>Stator lamination</dt><dd>OD 160 → <strong>167 mm</strong>. Slot depth {CU['geo']['slot_depth']:.2f} → <strong>{rec['geo']['slot_depth']:.2f} mm</strong> (slot bottom radius 71.15 → 75.65 mm). Back-iron {CU['geo']['yoke']:.2f} → <strong>{rec['geo']['yoke']:.2f} mm</strong>. Unchanged: bore 107 mm, 12 slots, tooth width 15.54 mm, tooth tip, slot opening, slot-bottom corner radius, M235-35A 0.35 mm. Slot area 281.2 → {rec['geo']['slot_area']:.1f} mm² (×{rec['geo']['slot_area'] / CU['geo']['slot_area']:.3f}). New lamination die and a new housing bore (167 mm).</dd>
 <dt>Stack length</dt><dd>64 → <strong>{rec['L']:.0f} mm</strong> for the stator, rotor laminations and magnets (same cross-sections; magnets +{rec['L'] - 64:.0f} mm long). Shaft, bearing span and housing length to suit (+{rec['L'] - 64:.0f} mm, plus the longer end windings).</dd>
@@ -342,20 +434,20 @@ Aluminium cannot reach copper's efficiency within OD 167: the smallest range los
 </dl>
 <figure><img src="{F_SLOT}" alt="Slot drawing"><figcaption>One slot of the copper stator and of the recommended stator. The tooth, tip and opening are unchanged; the slot is deeper and the OD larger.</figcaption></figure>
 
-<h2>7. Stator variants solved in FEMM</h2>
+<h2>8. Stator variants solved in FEMM</h2>
 <p>17 stators, each solved at a 4 × 4 grid of d-q currents over the 360 A circle at 2 rotor positions (half model, magnets 100 °C), on top of the Motor-CAD-equivalent copper model (skew, Motor-CAD torque, v3 iron loss). The differences against the copper stator (flux linkage, stator iron-loss sums, slot field) are applied to the copper Lab model.</p>
 <div class="tw"><table><thead><tr><th>Stator</th><th>OD</th><th>Yoke (mm)</th><th>Tooth (mm)</th><th>Slot (mm²)</th><th>Max torque, 64 mm, 10 turns (N·m, 2D)</th><th>Tooth B 99th pct (T)</th><th>Yoke B 99th pct (T)</th><th>Stator steel (kg, 64 mm)</th></tr></thead><tbody>{femm_rows()}</tbody></table></div>
 <p class="note">Thinning the yoke by 1 mm costs about 1.3 % of peak torque (yoke flux density 1.70 → 1.78 T); thinning the teeth by 1 mm costs about 1.9 %. A larger OD with the same yoke and teeth costs only 0.6 % at most (the slot gets deeper, so slot leakage rises slightly). That is why the best designs keep the teeth and thin the yoke by at most 1 mm.</p>
 {'<h3>Check of the interpolation against direct FEMM solves</h3><div class="tw"><table><thead><tr><th>Stator</th><th>id (A)</th><th>iq (A)</th><th>ψq copper stator (mV·s)</th><th>Δψq FEMM</th><th>Δψq model</th><th>ψd copper stator</th><th>Δψd FEMM</th><th>Δψd model</th><th>Iron-loss ratio FEMM</th><th>Iron-loss ratio model</th></tr></thead><tbody>' + verify_rows() + '</tbody></table></div><p class="note">Currents between the grid nodes, 4 rotor positions (0, 3, 6, 9°). Largest error of the model in ψq: %.2f %% of ψq; in the stator iron-loss ratio: %.1f %%.</p>' % VE if VF else ''}
 
-<h2>8. Method and assumptions</h2>
+<h2>9. Method and assumptions</h2>
 <dl>
 <dt>Electromagnetics</dt><dd>Motor-CAD-equivalent FEMM Lab model of Design9795_1 (efficiency within 0.28 points of Motor-CAD over 840 map points), with the stator-variant corrections from FEMM. Turns: currents scaled by turns (same ampere-turns, same field), flux linkage × turns, end-winding inductance × turns². Stack length: flux, torque, iron loss and windage scale with length (2D); end-winding length is unchanged.</dd>
 <dt>Winding</dt><dd>Aluminium EC-1350, 2.826 × 10⁻⁸ Ω·m at 20 °C, 0.00403/K, 2703 kg/m³; winding at 100 °C. Insulated fill held at or below copper's 0.513 (grade-2 enamel build 0.042 + 0.014 d mm). Wire sizes: IEC 60317 and SWG from 1.0 mm, 1–6 strands in hand. Mean turn length from the stack length, tooth width and coil thickness. AC loss by the hybrid method (factor 2), slot field from FEMM.</dd>
 <dt>Range</dt><dd>Telematics speed trace (Spoke V2, {R['cycles'][CY]['km']:.1f} km) and WMTC Class 1 (2 × part 1 reduced, {R['cycles']['WMTC Class 1']['km']:.1f} km). Vehicle GVW 757 kg, CdA 1.117 m², wheel radius 0.30 m, ratio 13.9; assumed Crr 0.015, gearbox 0.95, rotating mass factor 1.05, flat road, regenerative braking down to −26.4 N·m. Range change = energy per km at the motor terminals, copper ÷ aluminium − 1; inverter and battery taken as equal for all designs, so the battery-level change is about the same.</dd>
 <dt>Cost</dt><dd>Active materials only, INR/kg: copper wire 1100, aluminium wire 370 (sensitivity 230–450), ferrite 800, M235-35A finished laminations 300 (net mass, stator + rotor), wire waste 5 %. Not included: lamination die, housing, terminations, winding process, scrap from the larger blank (the gross blank goes from {CU['steel_gross']:.2f} to {rec['steel_gross']:.2f} kg).</dd>
 <dt>Performance criteria</dt><dd>Full: peak torque at 1000 rpm ≥ 99.5 % of copper's and envelope ≥ 99 % of copper's at every speed from 0 to 9500 rpm. Relaxed: envelope ≥ 97 %.</dd>
-<dt>Files</dt><dd>alu9795_femm.py (FEMM stator variants), alu9795_study.py (aluminium design model), alu9795_search.py (designs, cycles, cost), alu9795_analyse.py (best designs), alu9795_verify.py (FEMM check), build_alu9795_report.py (this report).</dd>
+<dt>Files</dt><dd>alu9795_femm.py (FEMM stator variants), alu9795_study.py (aluminium design model), alu9795_search.py (designs, cycles, cost), alu9795_analyse.py (best designs), alu9795_verify.py (FEMM check), alu9795_ops.py (OP1–OP3), build_alu9795_report.py (this report).</dd>
 </dl>
 </div></div>
 '''
