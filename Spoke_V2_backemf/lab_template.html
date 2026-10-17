@@ -1,0 +1,151 @@
+<title>Spoke V2 Lab Maps 100 °C</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 1140px); maps in a two-up grid that stacks on phones; figures sit on white plates in both themes */
+:root{
+  --bg:#f4f6f7; --panel:#ffffff; --fg:#16202a; --muted:#596673; --line:#d4dce2; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --ok:#1f7a3a; --ok-soft:#e1f3e6; --mid:#a15c00; --mid-soft:#fbf0de;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1140px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800}
+h2{font-size:1.35rem;font-weight:700;display:flex;gap:.6em;align-items:baseline}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1rem;font-weight:700}
+p{margin:0;max-width:72ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi .v{font-family:var(--f-mono);font-size:1.5rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .l,.kpi .u{font-size:.82rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:18px}
+.grid2>*{min-width:0}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure img{display:block;width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+figcaption{font-size:.85rem;color:var(--muted)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.84rem}
+td.txt{font-family:var(--f-body);font-size:.9rem}
+.note{background:var(--mid-soft);border-left:3px solid var(--mid);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.okbox{background:var(--ok-soft);border-left:3px solid var(--ok);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px;max-width:80ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">FEMM 2D · Motor-CAD Lab settings · winding and magnets 100 °C</span>
+  <h1>Spoke V2 torque-speed and efficiency maps</h1>
+  <p class="muted">Torque-speed envelope and operating maps for the 12-slot / 10-pole ferrite spoke motor (<code>ADAPTIVE_MODEL_COMPLETE_4.mot</code>), computed with FEMM using the Motor-CAD drive, temperature and loss settings. The back-EMF was checked against Motor-CAD first (section 1). <b>Updated 11 Oct 2026:</b> the iron-loss model has been corrected, so these maps now agree with the Motor-CAD Lab export (mean efficiency difference −0.6 points, peak 95.3 % against 95.34 %). The consistency report explains the changes.</p>
+  <div class="meta"><span>52 V DC · Mi 0.95</span><span>360 A rms max · 280 A DC max</span><span>MTPA + field weakening</span><span>0–12 000 rpm</span><span>11 Oct 2026</span></div>
+</header>
+
+<section>
+  <h2><span class="n">1</span>Back-EMF check against Motor-CAD (20 °C, 1000 rpm)</h2>
+  <div class="okbox"><b>Consistent, so the map study went ahead.</b> With the Motor-CAD M235-35A B-H curve, the rms back-EMF is {{V_RMS}} V against 8.213 V (−0.3 %) and the fundamental is {{V_F1}} V against 11.60 V peak (−0.5 %).</div>
+  <figure><img src="{{IMG_VAL}}" alt="Back-EMF and cogging overlay, FEMM vs Motor-CAD"><figcaption>Left: back-EMF waveform. Right: cogging torque over one 6° period. Orange is Motor-CAD (digitised from the screen photos), blue is FEMM.</figcaption></figure>
+  <div class="tbl"><table>
+    <tr><th>Quantity</th><th>Motor-CAD</th><th>FEMM, full resolution</th><th>FEMM sampled like Motor-CAD (30 pts/cycle)</th><th>Comment</th></tr>
+    <tr><td class="txt">EMF rms</td><td>8.213 V</td><td>{{V_RMS}} V</td><td>{{V_RMS30}} V</td><td class="txt">agree</td></tr>
+    <tr><td class="txt">EMF peak / fundamental</td><td>11.51 / 11.60 V</td><td>{{V_PK}} / {{V_F1}} V</td><td>–</td><td class="txt">agree</td></tr>
+    <tr><td class="txt">THD</td><td>5.42 %</td><td>{{V_THD}} % (11th {{V_H11}} %)</td><td>{{V_THD30}} %</td><td class="txt">agrees once sampled the same way</td></tr>
+    <tr><td class="txt">Cogging pk-pk</td><td>0.663 N·m</td><td>{{V_COG}} N·m</td><td>0.61–0.77 N·m at 6–10 pts/period</td><td class="txt">FEMM mesh-converged (0.847–0.868); see note</td></tr>
+  </table></div>
+  <div class="note"><b>THD and cogging depend on sampling</b><p>FEMM is solved every 2° el (EMF) and 0.1–0.2° mech (cogging). Sampled the way Motor-CAD's curves appear to be (about 30 points per electrical cycle, forward difference), FEMM's THD becomes {{V_THD30}} % against Motor-CAD's 5.42 %. Motor-CAD's cogging curve is smooth with rounded peaks, which suggests it too is coarsely sampled. The "points per cycle" settings in Motor-CAD's E-Magnetics calculation tab will confirm this. Fillets (0.3 / 1.0 / 1.95 mm) and a 4× finer air-gap mesh each change FEMM cogging by under 2 %.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">2</span>Headline results at 100 °C</h2>
+  <div class="kpis">
+    <div class="kpi"><span class="l">Peak torque (0 rpm, 360 A rms)</span><span class="v">{{PEAK_T}}</span><span class="u">N·m</span></div>
+    <div class="kpi"><span class="l">Peak shaft power</span><span class="v">{{PEAK_P}}</span><span class="u">kW (280 A DC limited)</span></div>
+    <div class="kpi"><span class="l">Base speed (torque −2 %)</span><span class="v">{{BASE}}</span><span class="u">rpm</span></div>
+    <div class="kpi"><span class="l">At 12 000 rpm</span><span class="v">{{T12}}</span><span class="u">N·m, {{P12}} kW</span></div>
+    <div class="kpi"><span class="l">Peak efficiency</span><span class="v">{{EFF}} %</span><span class="u">{{EFF_N}} rpm, {{EFF_T}} N·m</span></div>
+  </div>
+  <figure><img src="{{IMG_ENV}}" alt="Torque and power versus speed"><figcaption>Dotted lines mark where the limiting constraint changes: phase current (360 A rms), DC current (280 A = 14.56 kW input) or phase voltage (49.4 V peak = 0.95 × 52 V).</figcaption></figure>
+  <figure><img src="{{IMG_ENV2}}" alt="Currents, voltage and losses along the envelope"></figure>
+  <div class="tbl"><table>
+    <tr><th>rpm</th><th>T N·m</th><th>P kW</th><th>I line A rms</th><th>I DC A</th><th>V ph peak</th><th>eff %</th><th>Cu DC / Cu AC / Fe / mech W</th><th>limit</th></tr>
+    {{ENV_ROWS}}
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Efficiency and loss maps</h2>
+  <p class="muted">Every map point is the least-current d-q operating point that delivers that shaft torque within the current, voltage and DC-current limits (Motor-CAD Lab "Maximum Torque/Amp" strategy). The black line is the envelope.</p>
+  <figure><img src="{{IMG_EFF}}" alt="Efficiency map"></figure>
+  <div class="grid2">
+    <figure><img src="{{IMG_LOSS}}" alt="Total loss map"></figure>
+    <figure><img src="{{IMG_PCU}}" alt="DC copper loss map"></figure>
+    <figure><img src="{{IMG_PAC}}" alt="AC copper loss map"></figure>
+    <figure><img src="{{IMG_PFE}}" alt="Iron loss map"></figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">4</span>Electrical operating maps</h2>
+  <div class="grid2">
+    <figure><img src="{{IMG_I}}" alt="Line current map"></figure>
+    <figure><img src="{{IMG_IDC}}" alt="DC current map"></figure>
+    <figure><img src="{{IMG_V}}" alt="Phase voltage map"></figure>
+    <figure><img src="{{IMG_PF}}" alt="Power factor map"></figure>
+    <figure><img src="{{IMG_GAMMA}}" alt="Current advance angle map"></figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">5</span>d-q flux-linkage map (100 °C)</h2>
+  <figure><img src="{{IMG_DQ}}" alt="d-q flux linkage and torque maps"><figcaption>36 current points × 4 rotor positions (0, 7.5, 15, 22.5° mech), averaged. Values are per parallel path; delta phase current = 2 × path current.</figcaption></figure>
+  <div class="tbl"><table>
+    <tr><th>Parameter</th><th>Value</th></tr>
+    <tr><td class="txt">Magnet flux linkage ψm (per path = phase, peak)</td><td>{{PSIM}} mWb</td></tr>
+    <tr><td class="txt">Ld / Lq, unsaturated, per delta phase</td><td>{{LD}} / {{LQ}} µH</td></tr>
+    <tr><td class="txt">End-winding inductance (Motor-CAD, added)</td><td>1.954 µH per phase</td></tr>
+    <tr><td class="txt">Phase resistance at 100 °C (DC)</td><td>{{RPH}} mΩ</td></tr>
+    <tr><td class="txt">Magnet Br at 100 °C (−0.1797 %/K)</td><td>{{BR}} T</td></tr>
+    <tr><td class="txt">Stator iron mass (FEMM / Motor-CAD)</td><td>{{STM}} / 3.611 kg</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="n">6</span>Settings and loss models</h2>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>Value (from Motor-CAD)</th><th>How FEMM uses it</th></tr>
+    <tr><td class="txt">DC bus / modulation index</td><td>52 V / 0.95</td><td class="txt">phase (= line, delta) peak voltage ≤ 0.95 × 52 = 49.4 V</td></tr>
+    <tr><td class="txt">Max stator current</td><td>360 A rms (509.1 A peak) line</td><td class="txt">207.8 A rms phase, 146.97 A peak per path</td></tr>
+    <tr><td class="txt">DC current limit</td><td>280 A</td><td class="txt">input power ≤ 52 × 280 = 14.56 kW (converter loss 0)</td></tr>
+    <tr><td class="txt">Control strategy</td><td>Maximum Torque/Amp</td><td class="txt">least current for each torque; field weakening when voltage-limited</td></tr>
+    <tr><td class="txt">Temperatures</td><td>winding 100 °C, magnets 100 °C</td><td class="txt">R × (1 + 0.003862 × 80); Br 0.46 × (1 − 0.001797 × 80)</td></tr>
+    <tr><td class="txt">Iron loss</td><td>Steinmetz Kh 0.02533, α 2.07, Keddy 2.199e-6, build factor 1.6 / 1.6</td><td class="txt">full electrical cycle (30 points) on a fixed mesh (air-gap element) at 12 d-q points. Stator: peak-B Steinmetz per element and component, Kh·f·B^2.07 + 2π²·Keddy·f²·B². Rotor: the same per harmonic. Hysteresis ∝ f, eddy ∝ f², as Motor-CAD scales its loss map.</td></tr>
+    <tr><td class="txt">AC copper loss</td><td>Hybrid FEA, adjustment factor 2</td><td class="txt">round-wire eddy formula π·d⁴·ω²·B̂²/(128ρ) per conductor, B̂ from the FEMM slot field at each d-q point, × 2</td></tr>
+    <tr><td class="txt">Bearings / windage</td><td>11.85 + 8.89 W / 8.89 W at 2600 rpm, exponent 1.3</td><td class="txt">29.63 × (n/2600)^1.3 W</td></tr>
+    <tr><td class="txt">Magnet loss</td><td>build factor 2</td><td class="txt">ferrite resistivity 100 Ω·m, so treated as 0</td></tr>
+    <tr><td class="txt">Efficiency</td><td>–</td><td class="txt">shaft power / (shaft power + all losses); shaft torque = EM torque − (iron + mechanical) loss torque</td></tr>
+  </table></div>
+  <div class="note"><b>Limits of this study</b>
+    <ul>
+      <li>2D model: no 3D end effects of the spoke rotor (3D torque is typically a few % lower).</li>
+      <li>AC copper loss uses the low-frequency round-wire formula. It agrees with Motor-CAD's AC loss within about ±9 % up to 9000 rpm, with no bias. Above 9000 rpm, where there is no Motor-CAD data, it may be overstated, because the wire is 1.2 skin depths across at 1 kHz.</li>
+      <li>Iron loss, checked against Motor-CAD's map: stator about +11 %, rotor about −12 %, total +7 % on average. Minor loops (Kc 0.65) are not modelled separately.</li>
+      <li>The d-q map has 6 × 6 current points with cubic interpolation, against Motor-CAD's 30-point saturation model.</li>
+    </ul></div>
+  <p class="muted">Files: <code>E:\TVSM\Motor Design\FEM\Spoke_V2_backemf\</code>: <code>lab_map.py</code> (solve + maps), <code>dq_100C.json</code>, <code>lab_100C.json</code>, <code>build_lab_report.py</code>.</p>
+</section>
+</div>

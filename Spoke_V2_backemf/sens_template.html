@@ -1,0 +1,140 @@
+<title>Spoke V2 Sensitivity Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 1160px): problem, recommendation, sensitivities, trade-off, skew, candidates, data */
+:root{
+  --bg:#f4f6f7; --panel:#ffffff; --fg:#16202a; --muted:#596673; --line:#d4dce2; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --ok:#1f7a3a; --ok-soft:#e1f3e6; --mid:#a15c00; --mid-soft:#fbf0de; --bad:#b42318; --bad-soft:#fde4e1; --hl:#fff4d6;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; --hl:#2d2810; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; --hl:#2d2810; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px;padding-block:28px 72px;display:flex;flex-direction:column;gap:42px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.7rem,4vw,2.6rem);font-weight:800}
+h2{font-size:1.38rem;font-weight:700;display:flex;gap:.6em;align-items:baseline}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1.02rem;font-weight:700}
+p{margin:0;max-width:76ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+section{display:flex;flex-direction:column;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.box .t{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.okbox{background:var(--ok-soft);border-left:3px solid var(--ok);padding:14px 18px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:8px}
+.note{background:var(--mid-soft);border-left:3px solid var(--mid);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure img{display:block;width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+figcaption{font-size:.85rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:18px}
+.grid2>*{min-width:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.82rem}
+td.txt{font-family:var(--f-body);font-size:.88rem}
+tr.base td{background:var(--hl)}
+.src{font-family:var(--f-body);font-size:.75rem;color:var(--muted)}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+ul,ol{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:5px;max-width:86ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">FEMM 2D geometric sensitivity · 22 designs + 3 candidates · about 950 solves · tuned to Motor-CAD</span>
+  <h1>Spoke V2 sensitivity study and design recommendation</h1>
+  <p class="muted">Which geometric parameter affects which performance figure, and by how much. The aim is to maximise torque at 2000 rpm / 360 A and minimise loss at 9339 rpm / 3.24 N·m, while keeping back-EMF THD below 5 % and torque ripple below 10 % at every operating point, within the hard constraints shaft OD = 30 mm, bridge ≥ 1.0 mm and bridge offset > 3.5 mm.</p>
+</header>
+
+<section>
+  <h2><span class="n">1</span>Problem set-up</h2>
+  <div class="grid3">
+    <div class="box"><span class="t">Objective 1 · maximise</span><b>Torque at 2000 rpm, 360 A rms</b><p class="src">MTPA electromagnetic torque at 100 °C. Current angle swept 17° / 23° / 29°, parabola peak, averaged over 2 rotor positions.</p></div>
+    <div class="box"><span class="t">Objective 2 · minimise</span><b>Total loss at 9339 rpm, 3.24 N·m</b><p class="src">Field-weakening point at the 49.4 V limit (52 V, Mi 0.95), from a local d-q model (4 solves). Loss = Cu DC + Cu AC + iron + mechanical, using the models tuned to Motor-CAD.</p></div>
+    <div class="box"><span class="t">Requirement · THD &lt; 5 %</span><b>No-load back-EMF THD</b><p class="src">20 °C, 30 points per cycle, harmonics 2–13: the Motor-CAD definition (Motor-CAD's original design gives 5.42 %).</p></div>
+    <div class="box"><span class="t">Requirement · ripple &lt; 10 %</span><b>At every operating point</b><p class="src">Worst full-load point found from Motor-CAD's envelope: 9000 rpm, maximum current (OP1, 17.6 %). Checked for every design. Light load (OP2, 3.24 N·m) and peak torque (OP3) were also checked for the candidates.</p></div>
+    <div class="box"><span class="t">Hard constraints</span><b>Shaft 30 mm · bridge ≥ 1.0 mm · offset &gt; 3.5 mm</b><p class="src">Applied to every design D00–D20 and to the candidates. R00 (Motor-CAD original, shaft 25 mm) is a reference only. {{R00}}.</p></div>
+    <div class="box"><span class="t">Method</span><b>One at a time, then combined</b><p class="src">10 parameters, each at a low and a high value around D00 (bridge upwards only). Combined candidates were chosen from the sensitivities and verified with full FEMM solves. Skew was evaluated from the computed waveform harmonics.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">2</span>Recommendation</h2>
+  <div class="okbox">
+    <b>Recommended: candidate C3 with a 6° (mechanical) 3-step rotor skew. It meets every requirement, keeps SWG 11 and the 16 A/mm² limit, and improves the high-speed loss without losing torque.</b>
+    <ul>
+      <li><b>Geometry:</b> slot opening 5 → <b>4 mm</b>, tooth tip depth 0.8 → <b>1.2 mm</b>, magnet inset 2 → <b>1.5 mm</b>. Tooth width stays 15.5 mm, shaft 30 mm, bridge 1.0 mm, bridge offset 4.0 mm. Everything else as Motor-CAD.</li>
+      <li><b>Winding (unchanged):</b> SWG 11 (2.9464 mm), 20 conductors per slot, 10 turns per coil, 2 parallel paths. Current density at 360 A is <b>15.24 A/mm² rms</b> (&lt; 16). Slot area 271.1 mm², wire fill <b>0.532</b> (baseline 0.518, +2.7 %).</li>
+      <li><b>Skew:</b> 3 axial steps of 2° (6° in total, one cogging period), using the 3 existing magnet segments.</li>
+      <li><b>Result with skew:</b> torque <b>45.7 N·m</b> (46.14 without skew; D00 45.50); OP2 loss <b>644 W (−4.5 %)</b>; THD <b>2.3 %</b>; ripple OP1 / OP2 / OP3 <b>1.4 / 1.9 / 2.0 %</b>.</li>
+      <li><b>Why not C1:</b> C1 gives about 0.6 N·m more torque, but only through the 16.5 mm tooth. With SWG 11 fixed that pushes the wire fill to 0.562 (0.65 of the winding area), which is very likely not windable. C2 has the same problem.</li>
+      <li>Without skew, no geometry change brings light-load ripple below 10 %. At 3.24 N·m the ripple is almost entirely cogging, which only a skew of one cogging period cancels.</li>
+    </ul>
+  </div>  <div class="tbl"><table>
+    <tr><th>Candidate</th><th>Changes against D00</th><th>Torque N·m</th><th>OP2 loss W</th><th>THD %</th><th>Ripple OP1 %</th><th>Ripple OP2 %</th><th>Ripple OP3 %</th><th>With 6° 3-step skew: OP1 / OP2 / OP3 %</th></tr>
+    {{CROWS}}
+  </table></div>
+  <figure><img src="{{IMG_CANDSKEW}}" alt="Candidate ripple versus skew"><figcaption>Candidate ripple against skew angle at OP1 (9000 rpm, maximum current), OP2 (9339 rpm, 3.24 N·m) and OP3 (2000 rpm, peak torque). Red line: the 10 % limit.</figcaption></figure>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Which parameter affects what</h2>
+  <figure><img src="{{IMG_TORNADO}}" alt="Tornado charts per output"><figcaption>Change of each output against D00 for the low (light blue) and high (dark blue) value of each parameter. Parameters sorted by largest effect.</figcaption></figure>
+  <div class="grid2">
+    <figure><img src="{{IMG_MATRIX}}" alt="Influence matrix"><figcaption>Influence of +1 mm (green = beneficial for that output). For bridge thickness the slope is from 1.0 to 1.5 mm.</figcaption></figure>
+    <div class="box">
+      <span class="t">Reading the matrix</span>
+      <ul>
+        <li><b>Win-win parameters</b> (both objectives improve together): <b>smaller slot opening</b> (+0.9 % torque, −5.3 % loss per −1 mm), <b>deeper tooth tip</b> (+0.7 %, −3.6 % per +0.4 mm), <b>smaller magnet opening</b> (+0.7 %, −4.8 % per −1 mm). These change the air-gap field shape and leakage, not the magnet flux.</li>
+        <li><b>Trade-off parameters</b> (torque against loss, through back-EMF): <b>Magnet_Y</b>, <b>magnet depth</b>, <b>bridge thickness</b>, <b>magnet inset</b>. Anything that lowers back-EMF reduces field-weakening current and iron loss at 9339 rpm, but costs torque at 2000 rpm. About −3.5 % torque buys −9 to −11 % OP2 loss.</li>
+        <li><b>Minor parameters:</b> Magnet_Z, bridge offset (±0.5 %), tooth width (torque ±1.5 %, loss ±1 %).</li>
+        <li><b>THD:</b> improved by <b>smaller magnet inset</b> (4.36 % at 1.5 mm) and a <b>deeper tooth tip</b> (4.81 %); worsened by a smaller magnet opening (6.19 %). The slot opening has an optimum near 5 mm (both 4 and 6 mm are worse).</li>
+        <li><b>Ripple at the worst point:</b> improved by a <b>smaller slot opening</b> (16 → 9.0 %) and a <b>smaller magnet inset</b> (9.2 %); worsened by a deeper tip (20 %), a larger inset (21 %) and a larger slot opening (25 %).</li>
+      </ul></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">4</span>Trade-off between the two objectives</h2>
+  <figure><img src="{{IMG_SCATTER}}" alt="Torque vs OP2 loss scatter"><figcaption>Every design and candidate. Up and left is better. Square: D00. Diamond: R00 (Motor-CAD original). Stars: combined candidates. Colour: number of requirements met (no skew).</figcaption></figure>
+  <p>Most single parameters move the design along one trade-off line (more back-EMF gives more torque and more high-speed loss). The win-win parameters move it off that line, up and to the left. C1, C2 and C3 combine them and sit above and left of D00. C3 has the lowest loss and keeps the original tooth width, so the SWG 11 winding still fits.</p>
+</section>
+
+<section>
+  <h2><span class="n">5</span>Skew: the lever for THD and light-load ripple</h2>
+  <figure><img src="{{IMG_SKEW}}" alt="THD and ripple versus skew"><figcaption>Left: THD against skew (D00 and candidates). Right: ripple against skew at OP1/OP2/OP3, using D00's fine waveforms. Continuous skew is solid; 3-step skew is dashed.</figcaption></figure>
+  <ul>
+    <li>Cogging repeats every 6° (12 slots, 10 poles). A skew of one cogging period (6°) cancels it, which is why light-load ripple (OP2) drops from about 95 % to under 2 %. That matches the "optimum skewing angle 6°" in Motor-CAD's output.</li>
+    <li>Cost: the fundamental skew factor at 6° mech (30° el) is 0.989, so torque and back-EMF fall by about 1.1 %. A 3-step skew (using the 3 existing magnet segments) gives almost the same benefit as continuous skew at 6°.</li>
+    <li>2D multi-slice approximation: axial inter-slice leakage and end effects are not modelled. Confirm with Motor-CAD's skew option (E-Magnetics › Skew, 3 steps, 6°).</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="n">6</span>All designs</h2>
+  <p class="muted">Every design and its model file in <code>FEMM_models\sensitivity\</code>. Full input and output data, sensitivities, skew and all numbered raw solves are in <code>Spoke_V2_sensitivity.xlsx</code>.</p>
+  <div class="tbl"><table>
+    <tr><th>ID</th><th>Design</th><th>Torque N·m</th><th>Δ</th><th>OP2 loss W</th><th>Δ</th><th>THD %</th><th>Ripple OP1 %</th><th>EMF V rms @1000 rpm</th><th>Model file</th></tr>
+    {{ROWS}}
+  </table></div>
+  <div class="note"><b>Accuracy and limits</b>
+    <ul>
+      <li>FEMM model tuned to Motor-CAD: torque within about 1 %, back-EMF within 0.5 %, efficiency within about 0.6 pt. Differences between designs are more accurate than absolute values.</li>
+      <li>OP2 loss uses a local d-q model (4 solves). Iron loss is scaled from the tuned model and AC copper loss uses the hybrid estimate (×2), so trends are reliable to roughly ±2 %.</li>
+      <li>Ripple uses 12 rotor positions over the 12° period (1° steps). THD uses Motor-CAD's 30-point definition. Absolute ripple values can differ from Motor-CAD by about 5–25 % (see the operating-point report).</li>
+      <li>Wire is fixed at SWG 11 with 20 conductors per slot, so resistance and current density (15.24 A/mm² rms at 360 A) are identical in every design. Slot area and wire fill are in the Excel sheet Designs: C3 0.532, C1 0.562, C2 0.551, baseline 0.518.</li>
+      <li>Next step: build C3 + 6° 3-step skew in Motor-CAD and confirm it with E-Magnetics and Lab. The FEMM model is <code>FEMM_models\sensitivity\C3_combined_slot_open4_tip_depth1.2_magnet_inset1.5.fem</code>.</li>
+    </ul></div>
+</section>
+</div>

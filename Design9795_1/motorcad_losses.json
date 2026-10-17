@@ -1,0 +1,21 @@
+{
+ "_source": "Motor-CAD screens, 10 Oct 2026 (Input Data > Material database > M235-35A Steel Losses; Settings > Losses)",
+ "iron_loss": {
+  "method": "Steinmetz",
+  "Kh": 0.02533, "Keddy": 2.199e-6, "alpha": 2.07, "beta": 0.0,
+  "Kc_minor_loop": 0.65, "lamination_mm": 0.35,
+  "formula": "P [W/kg] = Kh * f * B^(alpha + beta*B) + Keddy * f^2 * B^2",
+  "build_factor_stator": 1.6, "build_factor_rotor": 1.6,
+  "bertotti_classical": {"Kexc": 0.002058, "alpha": 4, "Kh": 0.00391},
+  "bertotti_maxwell": {"Kexc": 0, "alpha": 2, "Kh": 0.02474}
+ },
+ "datasheet_50Hz_W_per_kg": {"B": [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8],
+   "P": [0.02,0.06,0.11,0.2,0.29,0.38,0.5,0.62,0.77,0.92,1.1,1.31,1.56,1.92,2.25,2.53,2.75,2.94]},
+ "datasheet_100Hz_W_per_kg": {"B": [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2,1.3,1.4,1.5],
+   "P": [0.04,0.14,0.3,0.49,0.71,0.97,1.25,1.57,1.92,2.31,2.75,3.26,3.88,4.67,5.54]},
+ "magnet_loss_build_factor": 2, "shaft_loss_build_factor": 1,
+ "bearing": {"front_W": 11.85, "rear_W": 8.89, "exponent": 1.3, "ref_rpm": 2600},
+ "windage": {"W": 8.89, "exponent": 1.3, "ref_rpm": 2600},
+ "ac_winding": {"model": "Hybrid FEA", "adjustment_factor": 2, "bundle_aspect": 1},
+ "converter_losses_W": 0
+}

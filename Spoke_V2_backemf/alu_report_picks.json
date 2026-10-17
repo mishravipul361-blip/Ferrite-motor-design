@@ -1,0 +1,23 @@
+{
+ "picks": {
+  "Copper baseline": "Copper baseline (SWG 11, 63 mm)",
+  "Aluminium drop-in": "Al drop-in SWG 11 S0",
+  "Same steel grade, best": "Al S1 L78.8 N16 3x1.90",
+  "Current lamination shape, thin steel": "Al S0 L90.0 N14 4x1.70 NO20",
+  "No heavier than copper": "Al S2 L75.0 N18 3x1.90 NO20",
+  "Recommended": "Al S3 L81.0 N16 3x2.05 NO20"
+ },
+ "img_keys": [
+  "diff_Aluminium drop-in",
+  "diff_Same steel grade, best",
+  "diff_Current lamination shape, thin steel",
+  "diff_No heavier than copper",
+  "diff_Recommended",
+  "effmaps",
+  "env",
+  "ops",
+  "trade",
+  "stack",
+  "slot"
+ ]
+}

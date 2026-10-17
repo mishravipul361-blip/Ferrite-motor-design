@@ -1,0 +1,365 @@
+<title>Spoke V2 Back-EMF Verification</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: single reading column (max 1100px) of numbered report sections; data tables in two-up grids that stack on phones */
+:root{
+  --bg:#f5f7f8; --panel:#ffffff; --fg:#17212b; --muted:#5a6773; --line:#d5dde3; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --ph1:#c8372d; --ph2:#2f8a3e; --ph3:#2457c5; --ll:#17212b; --warn:#a15c00; --warn-soft:#fbf0de;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ph1:#ff7a6e; --ph2:#6fd07e; --ph3:#7ea2ff; --ll:#e4eaef; --warn:#f0b260; --warn-soft:#33270f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ph1:#ff7a6e; --ph2:#6fd07e; --ph3:#7ea2ff; --ll:#e4eaef; --warn:#f0b260; --warn-soft:#33270f; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.35rem;font-weight:700;display:flex;gap:.6em;align-items:baseline}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1rem;font-weight:700}
+p{margin:0;max-width:68ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+.kpi.main{border-color:var(--accent);background:var(--accent-soft)}
+.kpi .v{font-family:var(--f-mono);font-size:1.6rem;font-weight:600;font-variant-numeric:tabular-nums}
+.kpi .u{font-size:.85rem;color:var(--muted)}
+.kpi .l{font-size:.82rem;color:var(--muted);letter-spacing:.02em}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px}
+.grid2>*{min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td.num,td:nth-child(n+2){font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.85rem}
+td.txt{font-family:var(--f-body)!important;font-size:.9rem!important}
+.src{font-family:var(--f-body);font-size:.75rem;color:var(--muted)}
+.chart svg{width:100%;height:auto;display:block}
+.chart .ax{stroke:var(--muted);stroke-width:1}
+.chart .gr{stroke:var(--line);stroke-width:1}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.85rem}
+.legend span::before{content:"";display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.legend span.dash::before{background:repeating-linear-gradient(90deg,var(--c) 0 5px,transparent 5px 9px)}
+figure{margin:0;display:flex;flex-direction:column;gap:6px}
+figure img{border-radius:4px;border:1px solid var(--line);background:#fff}
+figcaption{font-size:.85rem;color:var(--muted)}
+.note{background:var(--warn-soft);border-left:3px solid var(--warn);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.note b{color:var(--warn)}
+ul,ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px;max-width:75ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+.formula{font-family:var(--f-mono);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 16px;overflow-x:auto;font-size:.9rem}
+.pat td{text-align:center}
+.pat td.p1{color:var(--ph1);font-weight:600}.pat td.p2{color:var(--ph2);font-weight:600}.pat td.p3{color:var(--ph3);font-weight:600}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">FEMM 2D magnetostatic · no-load · verification against Ansys Motor-CAD</span>
+  <h1>Spoke V2 back-EMF verification</h1>
+  <p class="muted">An independent finite-element check of the open-circuit back-EMF of <code>E:\Spoke_V2\ADAPTIVE_MODEL_COMPLETE_4.mot</code>, a 12-slot / 10-pole ferrite spoke motor. Every input used is listed below so it can be compared field by field with the Motor-CAD model.</p>
+  <div class="meta"><span>Solver: FEMM 4.2 via pyfemm</span><span>Run: 10 Oct 2026</span><span>Magnets: 20 °C</span><span>Speed basis: 1000 rpm</span><span>Rotor sweep: 0–72° mech, 2° steps (36 solves per case)</span></div>
+</header>
+
+<section>
+  <h2><span class="n">1</span>Headline results</h2>
+  <div class="kpis">
+    <div class="kpi main"><span class="l">Phase back-EMF (rms)</span><span class="v">__V_E_PH_RMS__</span><span class="u">V per 1000 rpm</span></div>
+    <div class="kpi main"><span class="l">Line-line back-EMF (rms, star)</span><span class="v">__V_E_LL_RMS__</span><span class="u">V per 1000 rpm</span></div>
+    <div class="kpi"><span class="l">Phase back-EMF (peak)</span><span class="v">__V_E_PH_PK__</span><span class="u">V per 1000 rpm</span></div>
+    <div class="kpi"><span class="l">Line-line back-EMF (peak, star)</span><span class="v">__V_E_LL_PK__</span><span class="u">V per 1000 rpm</span></div>
+    <div class="kpi"><span class="l">Flux linkage per phase (fund. peak)</span><span class="v">__V_PSI__</span><span class="u">Wb-turn</span></div>
+    <div class="kpi"><span class="l">Phase THD (2nd–11th)</span><span class="v">__V_THD_PH__</span><span class="u">%</span></div>
+    <div class="kpi"><span class="l">Ke, phase rms</span><span class="v">__V_KE__</span><span class="u">V·s/rad (mech)</span></div>
+    <div class="kpi"><span class="l">Cogging torque</span><span class="v">__V_COG__</span><span class="u">N·m peak-to-peak</span></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Quantity @ 1000 rpm, 20 °C</th><th>Value</th><th>Unit</th></tr>
+    <tr><td class="txt">Phase EMF rms / fundamental rms</td><td>__V_E_PH_RMS__ / __V_E_PH_F_RMS__</td><td>V</td></tr>
+    <tr><td class="txt">Phase EMF peak / fundamental peak</td><td>__V_E_PH_PK__ / __V_E_PH_F_PK__</td><td>V</td></tr>
+    <tr><td class="txt">Line-line EMF rms / fundamental rms (star)</td><td>__V_E_LL_RMS__ / __V_E_LL_F_RMS__</td><td>V</td></tr>
+    <tr><td class="txt">Line-line EMF, delta connection (= phase)</td><td>__V_E_PH_RMS__</td><td>V rms</td></tr>
+    <tr><td class="txt">Line-line THD (star)</td><td>__V_THD_LL__</td><td>%</td></tr>
+    <tr><td class="txt">Ke line-line rms (star)</td><td>__V_KE_LL__</td><td>V·s/rad</td></tr>
+    <tr><td class="txt">Ideal torque constant from EMF, star, Kt = 3·Ke(phase)</td><td>__V_KT__</td><td>N·m/A rms phase</td></tr>
+    <tr><td class="txt">Non-magnetic shaft: phase EMF rms (change)</td><td>__V_E_NM__ (__V_DE__ %)</td><td>V</td></tr>
+  </table></div>
+  <p class="muted">Line-line values assume a star connection. If the Motor-CAD winding is delta, line-line equals the phase value. The three phases agree within 0.01 %.</p>
+</section>
+
+<section>
+  <h2><span class="n">2</span>Back-EMF waveforms</h2>
+  <div class="grid2">
+    <div class="card chart"><h3>Phase back-EMF @ 1000 rpm</h3><div id="c-phase"></div>
+      <div class="legend"><span style="--c:var(--ph1)">Phase 1</span><span style="--c:var(--ph2)">Phase 2</span><span style="--c:var(--ph3)">Phase 3</span><span class="dash" style="--c:var(--muted)">Ph 1, non-magnetic shaft</span></div></div>
+    <div class="card chart"><h3>Line-line back-EMF @ 1000 rpm (star, 1 − 2)</h3><div id="c-line"></div>
+      <div class="legend"><span style="--c:var(--ll)">V<sub>12</sub> = E<sub>1</sub> − E<sub>2</sub></span></div></div>
+  </div>
+  <div class="grid2">
+    <div class="card chart"><h3>Phase flux linkage (one path = phase)</h3><div id="c-psi"></div>
+      <div class="legend"><span style="--c:var(--ph1)">Phase 1</span><span style="--c:var(--ph2)">Phase 2</span><span style="--c:var(--ph3)">Phase 3</span></div></div>
+    <div class="card"><h3>Phase EMF harmonics</h3>
+      <div class="tbl"><table><tr><th>Harmonic (el.)</th><th>% of fundamental</th><th>Peak V @ 1000 rpm</th></tr>
+      <tr><td>1</td><td>100.00</td><td>__V_E_PH_F_PK__</td></tr>__HARM_ROWS__</table></div>
+      <p class="muted">The 11th harmonic (slot harmonic of 12 slots / 10 poles) dominates. Triplen harmonics cancel in the star line-line voltage.</p></div>
+  </div>
+  <p class="muted">EMF = −dψ/dt from the FEMM flux linkage, using a central difference over the 36 rotor positions (10° electrical apart). The step is fine enough for rms and fundamental values; the sharper ripple of the slot harmonic is smoothed slightly.</p>
+</section>
+
+<section>
+  <h2><span class="n">3</span>No-load field</h2>
+  <div class="grid2">
+    <figure><img src="__IMG_FULL__" alt="No-load flux density map of the full motor cross-section"><figcaption>|B| and flux lines, rotor at 0°, magnets 20 °C, magnetic shaft.</figcaption></figure>
+    <figure><img src="__IMG_ZOOM__" alt="Zoomed flux density map around one pole"><figcaption>Zoom on one pole: pole-piece neck, bridges and tooth tips.</figcaption></figure>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Field values at no load</h3><div class="tbl"><table>
+      <tr><th>Region</th><th>Value</th></tr>
+      <tr><td class="txt">Air-gap radial B, fundamental peak</td><td>__GAP_B1__ T</td></tr>
+      <tr><td class="txt">Air-gap radial B, peak</td><td>__GAP_BPK__ T</td></tr>
+      <tr><td class="txt">Tooth body B, area mean / 99th percentile</td><td>__TOOTH_B__ / __TOOTH_BMAX__ T</td></tr>
+      <tr><td class="txt">Stator yoke B, area mean / 99th percentile</td><td>__YOKE_B__ / __YOKE_BMAX__ T</td></tr>
+      <tr><td class="txt">Rotor bridges (r &lt; 24 mm), 99th percentile</td><td>__BRIDGE_B__ T</td></tr>
+      <tr><td class="txt">Magnet B along magnetisation, mean / min</td><td>__MAG_BM__ / __MAG_BMIN__ T</td></tr>
+      <tr><td class="txt">Magnet H along magnetisation, min</td><td>__MAG_HMIN__ kA/m</td></tr>
+      <tr><td class="txt">Cogging torque pk-pk (magnetic / non-magnetic shaft)</td><td>__V_COG__ / __V_COG_NM__ N·m</td></tr>
+    </table></div>
+    <p class="src">At no load the magnet's lowest H (__MAG_HMIN__ kA/m) is well inside HcJ (−432 kA/m at 20 °C), so there is no demagnetisation risk. The bridges are fully saturated, as intended.</p></div>
+    <div class="card chart"><h3>Air-gap radial flux density (mid-gap, rotor 0°)</h3><div id="c-gap"></div></div>
+  </div>
+  <div class="card chart"><h3>Cogging torque (from the same no-load solves)</h3><div id="c-cog"></div>
+    <p class="src">Sampled at 2° mech. The cogging period is 6° mech (LCM(12,10) = 60), so this curve is undersampled and gives only an indication of the peak-to-peak value. Run a dedicated cogging analysis at 0.25° steps if you need it.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">4</span>Inputs: stator geometry (Motor-CAD Parallel Tooth)</h2>
+  <div class="grid2">
+    <div class="card"><h3>Radial parameters</h3><div class="tbl"><table>
+      <tr><th>Parameter</th><th>Value</th><th>Used in FEMM</th></tr>
+      <tr><td class="txt">Slot number</td><td>12</td><td>yes</td></tr>
+      <tr><td class="txt">Stator lam dia</td><td>160 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Stator bore</td><td>107 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Tooth width (parallel)</td><td>15.5 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Slot depth (from bore)</td><td>17.5 mm</td><td>yes → slot bottom r 71.0</td></tr>
+      <tr><td class="txt">Slot corner radius</td><td>1.95 mm</td><td>no (sharp corner)</td></tr>
+      <tr><td class="txt">Tooth tip depth</td><td>0.8 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Slot opening</td><td>5.0 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Tooth tip angle</td><td>20°</td><td>yes (from slot-normal)</td></tr>
+      <tr><td class="txt">Sleeve thickness</td><td>0</td><td>–</td></tr>
+      <tr><td class="txt">Stator ducts</td><td>None</td><td>–</td></tr>
+    </table></div></div>
+    <div class="card"><h3>Derived slot points and mass check</h3><div class="tbl"><table>
+      <tr><th>Point (slot on +y)</th><th>x, y (mm)</th></tr>
+      <tr><td class="txt">A, tip corner on bore</td><td>__S_A__</td></tr>
+      <tr><td class="txt">B, end of tip depth</td><td>__S_B__</td></tr>
+      <tr><td class="txt">C, tip meets tooth side</td><td>__S_C__</td></tr>
+      <tr><td class="txt">E, tooth side meets slot bottom</td><td>__S_E__</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th>Mass (7650 kg/m³, stacking 0.97, 63 mm)</th><th>FEMM geometry</th><th>Motor-CAD</th></tr>
+      <tr><td class="txt">Stator back iron</td><td>1.996 kg</td><td>1.996 kg</td></tr>
+      <tr><td class="txt">Stator teeth</td><td>1.603 kg</td><td>1.615 kg</td></tr>
+    </table></div>
+    <p class="src">The 0.7 % tooth difference is the 1.95 mm slot-corner fillets, which were not modelled. The exact yoke match confirms the slot depth and the 0.97 stacking factor.</p></div>
+  </div>
+  <div class="card"><h3>Axial</h3><div class="tbl"><table>
+    <tr><th>Motor length</th><th>Stator lam length</th><th>Rotor lam length</th><th>Magnet length</th><th>Magnet axial segments</th><th>EWdg overhang F / R</th><th>Shaft dia / ext. F / R</th></tr>
+    <tr><td>99 mm</td><td>63 mm</td><td>63 mm</td><td>63 mm</td><td>3 (no effect in 2D)</td><td>15 / 15 mm</td><td>25 mm / 30 / 30 mm</td></tr>
+  </table></div><p class="src">FEMM depth = 63 mm. End effects are not modelled in 2D.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">5</span>Inputs: rotor geometry (Spoke, adaptive template)</h2>
+  <div class="grid2">
+    <div class="card"><h3>Template parameters</h3><div class="tbl"><table>
+      <tr><th>Parameter</th><th>Value</th><th>Used</th></tr>
+      <tr><td class="txt">Pole number</td><td>10</td><td>yes</td></tr>
+      <tr><td class="txt">Rotor diameter [calc]</td><td>106 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Air gap</td><td>0.5 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Magnet thickness</td><td>14 mm</td><td>no (template uses X/Y/Z)</td></tr>
+      <tr><td class="txt">Magnet depth</td><td>28 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Magnet opening</td><td>8.5 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Magnet inset</td><td>2 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Magnet_X / Magnet_Y / Magnet_Z</td><td>18 / 10.5 / 6 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Bridge_thickness / Bridge_Offset</td><td>1 / 4 mm</td><td>yes</td></tr>
+      <tr><td class="txt">Magnet_Glue_Gap</td><td>0.1 mm</td><td>yes (side faces)</td></tr>
+      <tr><td class="txt">Lamination / Pocket / Magnet fillet radius</td><td>0.3 / 1 / 0.5 mm</td><td>no</td></tr>
+      <tr><td class="txt">Groove_Enable</td><td>0</td><td>– (no grooves)</td></tr>
+      <tr><td class="txt">Rotor lamination inset</td><td>1</td><td>no</td></tr>
+      <tr><td class="txt">Shaft dia / hole</td><td>25 / 0 mm</td><td>yes, solid</td></tr>
+      <tr><td class="txt">Banding / sleeve</td><td>0 / 0</td><td>–</td></tr>
+    </table></div></div>
+    <div class="card"><h3>Derived pocket and magnet points (pole on +y, left half)</h3><div class="tbl"><table>
+      <tr><th>Point</th><th>x, y (mm)</th></tr>
+      <tr><td class="txt">G, pocket floor at web (r_shaft + offset)</td><td>__P_G__</td></tr>
+      <tr><td class="txt">P, magnet bottom corner (pocket)</td><td>__P_P__</td></tr>
+      <tr><td class="txt">Q, widest point (pocket)</td><td>__P_Q__</td></tr>
+      <tr><td class="txt">R, magnet top corner (pocket)</td><td>__P_R__</td></tr>
+      <tr><td class="txt">D, mouth corner</td><td>__P_D__</td></tr>
+      <tr><td class="txt">C, mouth at rotor OD</td><td>__P_C__</td></tr>
+      <tr><td class="txt">Pm / Qm / Rm, magnet after 0.1 mm glue gap</td><td>__P_PM__ __P_QM__ __P_RM__</td></tr>
+    </table></div>
+    <div class="tbl"><table>
+      <tr><th>Magnet</th><th>Value</th></tr>
+      <tr><td class="txt">Radial extent</td><td>r 23.0 → 51.0 mm</td></tr>
+      <tr><td class="txt">Cross-section area per pole</td><td>__MAG_AREA__ mm²</td></tr>
+      <tr><td class="txt">Magnet mass, 10 × 63 mm @ 4800 kg/m³</td><td>__MAG_MASS__ kg</td></tr>
+      <tr><td class="txt">Magnetisation</td><td>tangential, alternating</td></tr>
+    </table></div>
+    <p class="src">Motor-CAD lists rotor and magnet weights as 0 for this adaptive model, so please compare the magnet mass against your CAD.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">6</span>Inputs: winding and resistance</h2>
+  <div class="grid2">
+    <div class="card"><h3>Winding definition</h3><div class="tbl"><table>
+      <tr><th>Item</th><th>Value</th></tr>
+      <tr><td class="txt">Type</td><td>Lap, throw 1 (concentrated, tooth-wound)</td></tr>
+      <tr><td class="txt">Phases / layers</td><td>3 / 2 (side by side)</td></tr>
+      <tr><td class="txt">Turns per coil</td><td>10</td></tr>
+      <tr><td class="txt">Conductors per slot</td><td>20</td></tr>
+      <tr><td class="txt">Parallel paths</td><td>2</td></tr>
+      <tr><td class="txt">Series turns per phase</td><td>20 (2 coils × 10)</td></tr>
+      <tr><td class="txt">Coils per path</td><td>2 adjacent coils in series</td></tr>
+      <tr><td class="txt">Phase 1 coils (teeth between slots)</td><td>12–1, 1–2 ∥ 6–7, 7–8</td></tr>
+      <tr><td class="txt">Wire</td><td>SWG 11, Ø__D_BARE__ mm bare / Ø3.0302 insulated, 1 strand</td></tr>
+      <tr><td class="txt">Conductor area</td><td>__A_W__ mm²</td></tr>
+      <tr><td class="txt">Wire slot fill / EWdg fill</td><td>0.6028 / 0.3746</td></tr>
+      <tr><td class="txt">Liner thickness</td><td>0.5 mm</td></tr>
+      <tr><td class="txt">Winding factor (fund.)</td><td>0.933</td></tr>
+    </table></div></div>
+    <div class="card"><h3>Slot pattern (conductors per slot)</h3><div class="tbl pat"><table>
+      <tr><th>Slot</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th><th>11</th><th>12</th></tr>
+      <tr><td class="txt">Ph 1</td><td class="p1">20</td><td class="p1">10</td><td>0</td><td>0</td><td>0</td><td class="p1">10</td><td class="p1">20</td><td class="p1">10</td><td>0</td><td>0</td><td>0</td><td class="p1">10</td></tr>
+      <tr><td class="txt">Ph 2</td><td>0</td><td class="p2">10</td><td class="p2">20</td><td class="p2">10</td><td>0</td><td>0</td><td>0</td><td class="p2">10</td><td class="p2">20</td><td class="p2">10</td><td>0</td><td>0</td></tr>
+      <tr><td class="txt">Ph 3</td><td>0</td><td>0</td><td>0</td><td class="p3">10</td><td class="p3">20</td><td class="p3">10</td><td>0</td><td>0</td><td>0</td><td class="p3">10</td><td class="p3">20</td><td class="p3">10</td></tr>
+    </table></div>
+    <p class="src">From the Motor-CAD Winding › Pattern screen. In FEMM each tooth coil is its own circuit at 0 A, so each coil's flux linkage is read directly. A phase is (sum of its 4 coils) ÷ 2 paths.</p></div>
+  </div>
+  <div class="card"><h3>DC winding resistance (copper ρ<sub>20</sub> 1.724e-8 Ω·m, α 0.003862 /K)</h3>
+    <div class="tbl"><table>
+      <tr><th>Temperature (°C)</th><th>Per coil (mΩ)</th><th>Per phase (mΩ)</th><th>Line-line, star (mΩ)</th><th>Line-line, delta (mΩ)</th></tr>
+      __RES_ROWS__
+    </table></div>
+    <p class="src">Mean turn length = 2 × 63 mm active + 75.615 mm end-winding MLT (front + rear) = __MLT__ mm. Coil length = __L_COIL__ mm. Copper mass from these lengths = __CU_MASS__ kg (Motor-CAD 1.474 kg). Per phase = 2 coils in series ÷ 2 parallel paths = 1 coil. DC only: no AC or proximity effect, no lead or busbar resistance.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">7</span>Inputs: materials and temperature</h2>
+  <div class="grid2">
+    <div class="card"><h3>Magnet: DMEGC_DM4654 (sintered ferrite)</h3><div class="tbl"><table>
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td class="txt">Br at 20 °C</td><td>0.46 T</td></tr>
+      <tr><td class="txt">Relative recoil permeability μr</td><td>1.08</td></tr>
+      <tr><td class="txt">HcJ at 20 °C</td><td>432 kA/m</td></tr>
+      <tr><td class="txt">HcB = Br / (μ0·μr)</td><td>338.9 kA/m</td></tr>
+      <tr><td class="txt">Br temperature coefficient α</td><td>−0.18 %/K (linear)</td></tr>
+      <tr><td class="txt">Bknee at 100 °C (Motor-CAD)</td><td>−0.1284 T</td></tr>
+      <tr><td class="txt">Density / resistivity</td><td>4800 kg/m³ / 100 Ω·m (no eddy loss)</td></tr>
+      <tr><td class="txt"><b>Magnet temperature in this run</b></td><td><b>20 °C → Br 0.460 T</b></td></tr>
+    </table></div>
+    <h3>Temperature scaling</h3>
+    <div class="tbl"><table><tr><th>Magnet T (°C)</th><th>Br (T)</th><th>HcB (kA/m)</th><th>Phase EMF rms @ 1000 rpm (V)</th></tr>__MAG_ROWS__</table></div>
+    <p class="src">The scaled EMF assumes EMF ∝ Br. That holds well here because the stator iron is far from saturation at no load.</p></div>
+    <div class="card"><h3>Lamination: M235-35A (stator and rotor)</h3><div class="tbl"><table>
+      <tr><th>Property</th><th>Value</th></tr>
+      <tr><td class="txt">Thickness / stacking factor</td><td>0.35 mm / 0.97</td></tr>
+      <tr><td class="txt">Density</td><td>7650 kg/m³</td></tr>
+      <tr><td class="txt">B-H source</td><td>typical catalogue DC curve (not the Motor-CAD database curve)</td></tr>
+    </table></div>
+    <div class="grid2" style="gap:12px">
+      <div class="tbl"><table><tr><th>H (A/m)</th><th>B (T)</th></tr>__BH_ROWS__</table></div>
+      <div class="tbl"><h3>Shaft SCM420</h3><table><tr><th>H (A/m)</th><th>B (T)</th></tr>__BH_SHAFT__</table>
+      <p class="src">Typical curve. Changing the shaft to non-magnetic moves the EMF by __V_DE__ %, so this does not matter.</p></div>
+    </div></div>
+  </div>
+  <div class="card"><h3>Temperatures</h3><div class="tbl"><table>
+    <tr><th>Item</th><th>Value</th></tr>
+    <tr><td class="txt">Magnet temperature (FEA)</td><td>20 °C</td></tr>
+    <tr><td class="txt">Winding temperature</td><td>does not affect open-circuit EMF; resistance given at 20–150 °C above</td></tr>
+    <tr><td class="txt">Lamination B-H</td><td>temperature-independent</td></tr>
+  </table></div></div>
+</section>
+
+<section>
+  <h2><span class="n">8</span>Solver settings</h2>
+  <div class="tbl"><table>
+    <tr><th>Setting</th><th>Value</th></tr>
+    <tr><td class="txt">Problem</td><td>2D planar magnetostatic, depth 63 mm, full 360° model</td></tr>
+    <tr><td class="txt">Outer boundary</td><td>A = 0 on stator OD</td></tr>
+    <tr><td class="txt">Air gap</td><td>meshed in two layers split at r = 53.25 mm, max element 0.2 mm; rotor turned with mi_moverotate</td></tr>
+    <tr><td class="txt">Mesh sizes</td><td>magnet 1.0, rotor steel 1.0, slot 1.2, stator 1.5, tooth tips 0.5 mm (smart mesh off)</td></tr>
+    <tr><td class="txt">Precision / min angle</td><td>1e-8 / 30°</td></tr>
+    <tr><td class="txt">Rotor positions</td><td>0, 2, 4 … 70° mech (one electrical period), 4 solvers in parallel, ~22 min per case</td></tr>
+    <tr><td class="txt">Torque</td><td>weighted Maxwell stress tensor on the rotor group</td></tr>
+    <tr><td class="txt">Files</td><td><code>E:\TVSM\Motor Design\FEM\Spoke_V2_backemf\</code>: backemf.py, postprocess.py, field_stats.py, results.json</td></tr>
+  </table></div>
+</section>
+
+<section>
+  <h2><span class="n">9</span>Comparing with Motor-CAD</h2>
+  <div class="formula">E(n, T) = __V_E_PH_RMS__ V × (n / 1000 rpm) × [1 − 0.0018 × (T<sub>magnet</sub> − 20)]   phase rms<br>
+  E<sub>LL</sub>(n, T) = __V_E_LL_RMS__ V × (n / 1000 rpm) × [1 − 0.0018 × (T<sub>magnet</sub> − 20)]   line-line rms, star</div>
+  <div class="note"><b>Set Motor-CAD the same way before comparing</b>
+    <ul>
+      <li>Magnet temperature 20 °C in the E-Magnetics calculation (or scale with the formula above).</li>
+      <li>Compare the same quantity: phase or line-line, rms or peak, star or delta.</li>
+      <li>Expect FEMM to be within about 1–3 %. The remaining differences come from the M235-35A B-H curve, the unmodelled fillets (slot corner 1.95 mm; pocket, magnet and lamination fillets) and mesh density.</li>
+    </ul></div>
+  <h3>Not modelled</h3>
+  <ul>
+    <li>Fillet radii (slot corner, pocket, magnet, lamination) and the rotor lamination inset parameter.</li>
+    <li>3D end effects: axial leakage of the spoke rotor and end-winding flux. 2D and Motor-CAD 2D FEA both leave these out.</li>
+    <li>Magnet non-linearity near the knee (it is not reached at no load).</li>
+  </ul>
+</section>
+</div>
+
+<script>
+const D = __DATA__;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function chart(id, series, o) {
+  const W = 520, Hh = 270, m = {l: 48, r: 12, t: 10, b: 38};
+  const xs = series.flatMap(s => s.x), ys = series.flatMap(s => s.y);
+  const x0 = o.x0 ?? Math.min(...xs), x1 = o.x1 ?? Math.max(...xs);
+  let y0 = Math.min(...ys), y1 = Math.max(...ys); const pad = (y1 - y0) * 0.08 || 1; y0 -= pad; y1 += pad;
+  const step = niceStep((y1 - y0) / 5); y0 = Math.floor(y0 / step) * step; y1 = Math.ceil(y1 / step) * step;
+  const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r), Y = v => Hh - m.b - (v - y0) / (y1 - y0) * (Hh - m.t - m.b);
+  let s = `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${o.label}">`;
+  for (let v = y0; v <= y1 + 1e-9; v += step) s += `<line class="gr" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l - 6}" y="${Y(v) + 4}" text-anchor="end">${+v.toFixed(3)}</text>`;
+  for (let v = x0; v <= x1 + 1e-9; v += o.xstep) s += `<line class="gr" y1="${m.t}" y2="${Hh - m.b}" x1="${X(v)}" x2="${X(v)}"/><text x="${X(v)}" y="${Hh - m.b + 15}" text-anchor="middle">${v}</text>`;
+  s += `<line class="ax" x1="${m.l}" x2="${W - m.r}" y1="${Y(Math.max(y0, Math.min(0, y1)))}" y2="${Y(Math.max(y0, Math.min(0, y1)))}"/>`;
+  s += `<text x="${(m.l + W - m.r) / 2}" y="${Hh - 4}" text-anchor="middle">${o.xl}</text><text transform="translate(12 ${(Hh - m.b) / 2}) rotate(-90)" text-anchor="middle">${o.yl}</text>`;
+  for (const se of series) {
+    const d = se.x.map((x, i) => (i ? 'L' : 'M') + X(x).toFixed(1) + ' ' + Y(se.y[i]).toFixed(1)).join('');
+    s += `<path d="${d}" fill="none" stroke="var(${se.c})" stroke-width="${se.w || 1.8}" ${se.dash ? 'stroke-dasharray="5 4"' : ''}/>`;
+    if (se.dots) se.x.forEach((x, i) => s += `<circle cx="${X(x)}" cy="${Y(se.y[i])}" r="2" fill="var(${se.c})"/>`);
+  }
+  document.getElementById(id).innerHTML = s + '</svg>';
+}
+function niceStep(r) { const p = Math.pow(10, Math.floor(Math.log10(r))); const f = r / p; return (f < 1.5 ? 1 : f < 3 ? 2 : f < 7 ? 5 : 10) * p; }
+const cl = a => a.concat([a[0]]);
+const te = cl(D.theta_e.slice()).map((v, i, a) => i === a.length - 1 ? 360 : v);
+const ph = [['Ph1', '--ph1'], ['Ph2', '--ph2'], ['Ph3', '--ph3']];
+chart('c-phase', ph.map(([k, c]) => ({x: te, y: cl(D.emf[k]), c})).concat([{x: te, y: cl(D.emf_nm), c: '--muted', dash: 1, w: 1.2}]),
+  {xl: 'rotor position (electrical deg)', yl: 'V', xstep: 60, x0: 0, x1: 360, label: 'Phase back-EMF waveforms'});
+chart('c-line', [{x: te, y: cl(D.emf.Ph1.map((v, i) => v - D.emf.Ph2[i])), c: '--ll', dots: 1}],
+  {xl: 'rotor position (electrical deg)', yl: 'V', xstep: 60, x0: 0, x1: 360, label: 'Line-line back-EMF waveform'});
+chart('c-psi', ph.map(([k, c]) => ({x: te, y: cl(D.psi[k]).map(v => v * 1000), c})),
+  {xl: 'rotor position (electrical deg)', yl: 'mWb-turn', xstep: 60, x0: 0, x1: 360, label: 'Phase flux linkage'});
+const ga = D.gap.map((_, i) => i * 0.5 + 0.25);
+chart('c-gap', [{x: ga, y: D.gap, c: '--accent', w: 1.3}],
+  {xl: 'stator angle (mech deg)', yl: 'B radial (T)', xstep: 60, x0: 0, x1: 360, label: 'Air-gap radial flux density'});
+chart('c-cog', [{x: D.theta_m, y: D.cog, c: '--accent', dots: 1}],
+  {xl: 'rotor position (mech deg)', yl: 'N·m', xstep: 12, x0: 0, x1: 72, label: 'Cogging torque'});
+</script>

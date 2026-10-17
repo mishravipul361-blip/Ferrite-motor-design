@@ -1,0 +1,211 @@
+<title>Spoke V2 Aluminium Winding</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 1160px); story runs answer -> physics -> levers -> trade-off -> recommended design -> practicalities. Same system as the FEM tuning report. */
+:root{
+  --bg:#f4f6f7; --panel:#ffffff; --fg:#16202a; --muted:#596673; --line:#d4dce2; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --ok:#1f7a3a; --ok-soft:#e1f3e6; --mid:#a15c00; --mid-soft:#fbf0de; --bad:#b42318; --bad-soft:#fde4e1;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px;padding-block:28px 72px;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.8rem,4.2vw,2.7rem);font-weight:800}
+h2{font-size:1.4rem;font-weight:700;display:flex;gap:.6em;align-items:baseline;scroll-margin-top:16px}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1.02rem;font-weight:700}
+p{margin:0;max-width:76ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 8px}
+nav.toc a{font-size:.85rem;color:var(--accent);text-decoration:none;border:1px solid var(--line);background:var(--panel);padding:4px 10px;border-radius:999px}
+nav.toc a:hover,nav.toc a:focus-visible{border-color:var(--accent);outline:none}
+section{display:flex;flex-direction:column;gap:16px}
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.stage .t{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage.now{border-color:var(--ok);background:var(--ok-soft)}
+.stage.warn{border-color:var(--mid)}
+.stage .big{font-family:var(--f-mono);font-size:1.2rem;font-weight:600}
+.stage ul{font-size:.9rem;gap:2px}
+.cause{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.cause h3{display:flex;gap:.6em;align-items:baseline;flex-wrap:wrap}
+.tag{font-family:var(--f-mono);font-size:.72rem;padding:2px 8px;border-radius:999px;background:var(--bad-soft);color:var(--bad)}
+.tag.mid{background:var(--mid-soft);color:var(--mid)} .tag.ok{background:var(--ok-soft);color:var(--ok)}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure img{display:block;width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+figcaption{font-size:.85rem;color:var(--muted);max-width:110ch}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:18px}
+.grid2>*{min-width:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.84rem}
+td.txt{font-family:var(--f-body);font-size:.9rem}
+.src{font-family:var(--f-body);font-size:.78rem;color:var(--muted)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.mid{background:var(--mid-soft);color:var(--mid)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.okbox{background:var(--ok-soft);border-left:3px solid var(--ok);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.note{background:var(--mid-soft);border-left:3px solid var(--mid);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+ul,ol{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:6px;max-width:86ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+.eq{font-family:var(--f-mono);font-size:.9rem;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px;overflow-x:auto;white-space:pre}
+details{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:10px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Spoke V2 · 12-slot / 10-pole ferrite spoke · 52 V · copper → aluminium winding</span>
+  <h1>Aluminium winding study</h1>
+  <p class="muted">What has to change in Spoke V2 to replace the copper winding with aluminium and keep the same torque and efficiency. Covers slot area, wire size and strands, turns, stack length and lamination, and the resulting weight versus efficiency trade-off. Every number comes from the FEMM model tuned to Motor-CAD, rescaled and re-solved for each design.</p>
+  <div class="meta"><span>Base: Motor-CAD ADAPTIVE_MODEL_COMPLETE_4, FEMM Lab model v2</span><span>52 V, Mi 0.95, 360 A rms, 280 A DC, MTPA</span><span>winding and magnets 100 °C</span><span>__N_DESIGNS__ aluminium designs evaluated</span><span>15 Oct 2026</span></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#answer">1 Answer</a><a href="#physics">2 What aluminium changes</a><a href="#dropin">3 Straight swap</a><a href="#levers">4 Design levers</a>
+    <a href="#trade">5 Weight vs efficiency</a><a href="#cost">6 Cost</a><a href="#design">7 Recommended design</a><a href="#practical">8 Manufacturing changes</a><a href="#limits">9 Assumptions and next steps</a>
+  </nav>
+</header>
+
+<section id="answer">
+  <h2><span class="n">1</span>Answer</h2>
+  __ANSWER__
+  <div class="tbl"><table>
+    <tr><th>Design</th><th>Stack mm</th><th>Turns/phase</th><th>Slot</th><th>Steel</th><th>Active kg</th><th>Δ kg</th><th>OP1 Δη</th><th>OP2 Δη</th><th>OP3 Δη</th><th>Map mean Δη</th><th>Envelope (min)</th><th>Material cost $</th><th>Δ cost $</th></tr>
+    __PICK_ROWS__
+  </table></div>
+  <p class="src">Δη = efficiency of the design minus the copper design at the same speed and shaft torque, in percentage points. OP1 = 9000 rpm maximum power (14.0 N·m); OP2 = 9339 rpm, 3.24 N·m; OP3 = 2000 rpm, 44.3 N·m (peak-current MTPA). Map mean = mean over all speed/torque points of the copper map (250 rpm × 1 N·m grid). Envelope = lowest ratio of maximum shaft torque to the copper design over 250–12 000 rpm. Active mass = winding + stator and rotor laminations + magnets (shaft, housing and bearings excluded).</p>
+</section>
+
+<section id="physics">
+  <h2><span class="n">2</span>What changes when the conductor is aluminium</h2>
+  <div class="tbl"><table><tr><th>Property</th><th>Copper</th><th>Aluminium EC-1350</th><th>Consequence</th></tr>__MAT_ROWS__</table></div>
+  <p>Torque comes from coil ampere-turns, so the magnetic design does not care what the coil is made of. With the same turns and the same current, aluminium gives exactly the same torque, back-EMF and torque-speed envelope. Only the winding losses change:</p>
+  <ul>
+    <li><b>DC loss ×1.66.</b> Resistance per turn is 1.66 times higher at 100 °C in the same cross-section. Matching copper resistance needs 66 % more conductor area. The copper slot is already at Motor-CAD wire fill 0.5175, so that area must come from a bigger slot or a longer stack.</li>
+    <li><b>AC (eddy) loss falls.</b> Strand eddy loss scales with conductivity × d⁴. Aluminium carries only 61 % of copper's eddy loss in the same wire, and splitting each turn into 2–4 thinner strands cuts it much further. In this motor, AC loss is the largest winding loss above about 7000 rpm (501 W of 1353 W at OP1), so this is a real gain.</li>
+    <li><b>Field weakening costs more.</b> Above base speed the drive pushes a demagnetising d-axis current that produces no torque. The ampere-turns this needs are set by magnet flux and inductance, and they do not fall with a longer stack. More aluminium resistance therefore shows up fully at high speed and light load (OP2).</li>
+  </ul>
+  <p>The scaling rule used for every design below: with stack factor k = L/63 and turns factor s = N<sub>ph</sub>/20, the 2D field is a function of ampere-turns only.</p>
+  <div class="eq">torque      T(I)   = k · T₀(s·I)
+flux link.  ψ(I)   = s·k · ψ₀(s·I)          → keep s·k ≈ 1 to keep the same back-EMF, voltage and envelope
+iron loss   P_fe   = k · P_fe0(s·I)         (stator + rotor, same B, longer stack)
+DC loss     P_cu   = 3 · ρ(100 °C) · 2·N_c · MLT / A_turn · I_path²,  MLT = 2·L + end-winding
+AC loss     P_ac   = Motor-CAD hybrid formula (adjustment 2) with n strands × d⁴ / ρ, active length L</div>
+  <p class="muted">T₀, ψ₀ and P_fe0 are the FEMM d-q and iron-loss maps of the 63 mm copper design (Lab model v2, which matches Motor-CAD within 0.8 % on efficiency over 788 map points). Checked: the copper design run through this model reproduces the published Lab map exactly (largest difference 0.00005 points).</p>
+</section>
+
+<section id="dropin">
+  <h2><span class="n">3</span>Straight swap: same lamination, same wire size, same turns</h2>
+  <p>Replacing SWG 11 copper with SWG 11 aluminium, with everything else unchanged, saves __DROP_DM__ kg (winding __CU_WDG__ → __DROP_WDG__ kg). Phase resistance rises from __RPH_CU__ to __RPH_DROP__ mΩ. Peak efficiency falls from __CU_PEAK__ % to __DROP_PEAK__ %. The loss is concentrated at high torque: OP3 __DROP_OP3__ points, OP1 __DROP_OP1__, OP2 __DROP_OP2__, map mean __DROP_MAP__. The envelope keeps at least __DROP_ENV__ % of the copper torque; the shortfall sits in the 280 A DC-current-limited region, where extra loss comes straight off shaft power.</p>
+  <figure><img src="__IMG_DIFF_ALUMINIUM_DROP_IN__" alt="Efficiency difference map, aluminium drop-in minus copper"><figcaption>Efficiency difference, aluminium drop-in − copper, over the copper operating map. Red = aluminium worse. The dashed line is the copper torque envelope; hatching marks points the aluminium design cannot reach.</figcaption></figure>
+</section>
+
+<section id="levers">
+  <h2><span class="n">4</span>Design levers</h2>
+  <div class="cause">
+    <h3>4.1 Turns and stack length <span class="tag ok">keeps torque and voltage</span></h3>
+    <p>A longer stack gives more flux per turn. Fewer turns then bring the back-EMF back to the copper value, and each turn gets a bigger share of the slot: per-turn area grows as 1/s. For the same torque the ampere-turns fall roughly as 1/k, so DC loss falls by about k² while the mean turn grows only by 2·ΔL. The winding stays delta with 2 parallel paths. 4 paths are not allowed: adjacent 12s/10p coils are 30° el apart, so paralleling them would drive circulating current. Turns per phase therefore come in steps of 2: 20 → 18 (70 mm), 16 (78.75 mm), 14 (90 mm). Each turn count was swept from 63 to 99 mm in 3 mm steps; lengths away from 20·63/N<sub>ph</sub> change the envelope and are filtered by the envelope check.</p>
+    <p>The cost is iron. Stator and rotor iron loss, magnet mass and lamination mass all grow in proportion to k. At high speed and light load iron loss dominates, so a longer stack <em>lowers</em> OP2 efficiency even while it raises OP3.</p>
+  </div>
+  <div class="cause">
+    <h3>4.2 Slot area <span class="tag mid">new lamination die</span></h3>
+    <p>The extra slot area has to come from the yoke (deeper slot) or the teeth (narrower tooth), because the OD and bore stay fixed. A ferrite machine runs its iron at low flux density at no load. At peak current, though, the thinner yoke saturates and peak torque falls; the deeper slots lose noticeably more (table). The design model applies these FEMM torque, flux and iron-loss changes, and the envelope check rejects any design that cannot hold the copper torque-speed curve. Five stators were re-solved in FEMM, each on a 4 × 4 (i<sub>d</sub>, i<sub>q</sub>) grid at two rotor positions (160 solves). OD 160 mm, bore 107 mm, slot opening and tip unchanged.</p>
+    <div class="tbl"><table><tr><th>Variant</th><th>Slot depth mm</th><th>Tooth mm</th><th>Yoke mm</th><th>Slot area mm²</th><th>Torque near peak</th><th>Tooth B mean T</th><th>Yoke B mean T</th><th>Yoke B 99 % T</th><th>Stator iron loss sum</th></tr>__SLOT_ROWS__</table></div>
+    <p class="src">Torque and flux density at i<sub>d</sub> = −49 A, i<sub>q</sub> = 147 A path peak, near the 360 A MTPA point, mean of rotor 0° and 6°. Stator iron loss sum is the mass-weighted Σ B<sup>α</sup> averaged over the grid, against S0. Torque and iron changes enter the design model as FEMM differences and ratios against S0.</p>
+  </div>
+  <div class="cause">
+    <h3>4.3 Wire diameter and strands <span class="tag ok">no tooling change</span></h3>
+    <p>Each design uses the largest standard round wire (IEC 60317 metric, SWG or AWG, grade-2 enamel) that keeps the insulated-wire slot fill at or below the copper design's 0.5175, for 1 to 4 strands in hand. Copper area per turn is about the same whatever the strand count. AC loss falls about as d², so more strands help most at high speed. Options for the recommended design:</p>
+    <div class="tbl"><table><tr><th>Strands × bare dia</th><th>Area per turn mm²</th><th>Wire fill</th><th>R phase mΩ</th><th>OP1 Δη</th><th>OP2 Δη</th><th>OP3 Δη</th><th>Map Δη</th></tr>__WIRE_ROWS__</table></div>
+  </div>
+  <div class="cause">
+    <h3>4.4 Lamination thickness <span class="tag mid">material change</span></h3>
+    <p>Iron loss in this motor is mostly eddy-current loss at high speed (OP2: 164 W eddy, 96 W hysteresis out of 260 W). Classical eddy loss scales with thickness². Going from M235-35A to a 0.27 mm or 0.20 mm grade pays for the extra iron of a longer stack. It helps the copper design too, by +0.6 and +0.7 points on the map mean, so it is a separate improvement. It is included here because it is the only lever that recovers OP2 efficiency once the stack grows.</p>
+    <p class="src">Thin-gauge loss modelled as eddy × (t/0.35)², hysteresis ×1.0 (0.27 mm) and ×1.1 (0.20 mm), keeping the Motor-CAD Steinmetz fit and the 1.6 build factor. Confirm with the supplier's loss curves before committing.</p>
+  </div>
+</section>
+
+<section id="trade">
+  <h2><span class="n">5</span>Weight versus efficiency</h2>
+  <p>Each line is the best efficiency reachable at each mass for one combination of slot and steel, over all turn counts, stack lengths and strand options with the full torque-speed envelope kept (≥ 98.5 % of copper at every speed). Left: the worst of the three operating points. Right: mean over the whole map.</p>
+  <figure><img src="__IMG_TRADE__" alt="Pareto fronts: active mass against efficiency difference"><figcaption>Square = copper design. Cross = aluminium drop-in. Star = recommended design. Solid lines = enlarged slot (best of S1–S4); dashed lines = current slot S0.</figcaption></figure>
+  <details><summary>Pareto designs (table)</summary>
+    <div class="tbl"><table><tr><th>Family</th><th>Slot</th><th>Stack mm</th><th>Turns/ph</th><th>Strands</th><th>Active kg (Δ)</th><th>OP1 Δη</th><th>OP2 Δη</th><th>OP3 Δη</th><th>Map Δη</th></tr>__FRONT_ROWS__</table></div>
+  </details>
+  __TRADE_TEXT__
+</section>
+
+<section id="cost">
+  <h2><span class="n">6</span>Cost: aluminium against copper, M235-35A against 0.20 mm steel</h2>
+  __COST_TEXT__
+  <div class="tbl"><table><tr><th>Design</th><th>Stack mm</th><th>Steel</th><th>Active kg</th><th>Winding $</th><th>Steel $</th><th>Magnets $</th><th>Material cost $</th><th>Δ cost $</th><th>OP1 Δη</th><th>OP2 Δη</th><th>OP3 Δη</th><th>Map mean Δη</th></tr>__COST_ROWS__</table></div>
+  <p class="src">Per motor, active parts only: winding, stator and rotor laminations, magnets. Δη against the copper design with M235-35A.</p>
+  <h3>What moves the answer</h3>
+  <div class="tbl"><table><tr><th>Price change</th><th>Al recommended, 0.20 mm: Δ cost $</th><th>Al recommended shape, M235-35A: Δ cost $</th></tr>__SENS_ROWS__</table></div>
+  __BREAKEVEN__
+  <h3>Price assumptions (USD/kg)</h3>
+  <ul>
+    <li>Copper magnet wire 16.5: LME copper ≈ 14.7 $/kg, mid-October 2026, plus drawing and enamel. Aluminium magnet wire 5.5: LME aluminium ≈ 3.0 $/kg plus conversion. Wire mass +5 % for leads and scrap.</li>
+    <li>M235-35A 1.8. 0.20 mm non-oriented steel 4.0: no published price found, so this is an estimate and the most uncertain input. Get a supplier quote.</li>
+    <li>Ferrite magnets 4.0. Steel bought as a 164 mm square blank per lamination, stator and rotor from the same blank; punching scrap credited at 0.3.</li>
+    <li>Not included, all against aluminium and thin steel: stamping and stacking of thin laminations (81 mm of 0.20 mm ≈ 390 laminations against 175 today), aluminium terminations (crimp or weld instead of solder), multi-strand winding, longer housing and shaft.</li>
+  </ul>
+  <p class="src">Sources: <a href="https://www.westmetall.com/en/markdaten.php">Westmetall LME prices</a> · <a href="https://www.brecorder.com/news/40443822/aluminium-rebounds-from-8-month-low-copper-hits-two-week-peak">Business Recorder, LME 12 Oct 2026</a> · <a href="https://metalcharts.org/lme-copper-price">Metalcharts LME copper</a> · <a href="https://mining.com.au/copper-price-rises-amid-disruptions-zinc-and-aluminium-fall/">Mining.com.au</a> · <a href="https://dir.indiamart.com/impcat/enamelled-winding-wire/wire-material-aluminium-q13625270/">IndiaMART Al winding wire</a> · <a href="https://dir.indiamart.com/impcat/enamelled-copper-wire.html">IndiaMART Cu winding wire</a> · <a href="https://www.imarcgroup.com/electrical-steel-pricing-report">IMARC electrical steel</a> · <a href="https://www.chemanalyst.com/Pricing-data/electrical-steel-1357">ChemAnalyst electrical steel</a> · <a href="https://www.mysteel.net/daily-prices/6963373-non-grain-oriented-electrical-steel-prices-shanghai">Mysteel NGO steel</a>. Script: alu_cost.py.</p>
+</section>
+
+<section id="design">
+  <h2><span class="n">7</span>Recommended design</h2>
+  __DESIGN_TEXT__
+  <div class="grid2">
+    <figure><img src="__IMG_SLOT__" alt="Slot outline, copper design versus recommended"><figcaption>One slot pitch. Dashed: present slot. Filled: recommended slot (depth __FINAL_DEPTH__ mm, tooth __FINAL_TOOTH__ mm, yoke __FINAL_YOKE__ mm, __FINAL_AS__ mm² vs __AS0__ mm²).</figcaption></figure>
+    <div class="tbl"><table>__SPEC_ROWS__</table></div>
+  </div>
+  <figure><img src="__IMG_EFFMAPS__" alt="Efficiency maps, copper and recommended aluminium design"><figcaption>Efficiency maps on the same scale: copper design (left) and recommended aluminium design (right). Peak __CU_PEAK__ % and __FINAL_PEAK__ %.</figcaption></figure>
+  <figure><img src="__IMG_DIFF_RECOMMENDED__" alt="Efficiency difference map, recommended minus copper"><figcaption>Efficiency difference, recommended aluminium − copper. Blue = aluminium better.</figcaption></figure>
+  <figure><img src="__IMG_ENV__" alt="Torque and power envelopes"><figcaption>Maximum shaft torque and power against speed for the designs in the table in section 1.</figcaption></figure>
+  <figure><img src="__IMG_OPS__" alt="Loss breakdown at the three operating points"><figcaption>Loss breakdown at the three operating points, with efficiency above each bar.</figcaption></figure>
+  <details><summary>Operating-point details (table)</summary>
+    <div class="tbl"><table><tr><th>OP</th><th>Design</th><th>T shaft N·m</th><th>I line A rms</th><th>V phase pk</th><th>DC W</th><th>AC W</th><th>Iron W</th><th>Mech W</th><th>Total W</th><th>η %</th></tr>__OP_ROWS__</table></div>
+  </details>
+  <figure><img src="__IMG_STACK__" alt="Stack length sweep for the recommended family"><figcaption>Stack length for the recommended slot, steel and turn count (best strand option at each length). Left: efficiency difference. Right: active mass, with the copper design as the dashed line.</figcaption></figure>
+  <div class="tbl"><table><tr><th>Mass, kg</th><th>Winding</th><th>Stator lam.</th><th>Rotor lam.</th><th>Magnets</th><th>Active total</th><th>Δ vs copper</th></tr>__MASS_ROWS__</table></div>
+</section>
+
+<section id="practical">
+  <h2><span class="n">8</span>Manufacturing and design changes beyond the electromagnetics</h2>
+  <ul>
+    <li><b>Terminations.</b> Aluminium cannot be soldered. Use crimp or ultrasonic welding to tinned-copper lugs, or TIG/ultrasonic Al–Cu transition joints at the star/delta bus. Bolted Al joints need Belleville washers and contact grease against creep and fretting.</li>
+    <li><b>Winding.</b> Aluminium magnet wire is softer and has about a third of copper's tensile strength. Reduce winding tension, use larger bend radii on the tooth corners and check enamel crack resistance after forming. 3–4 strands in hand need a tensioner per strand and a parallel-wire guide.</li>
+    <li><b>Insulation and impregnation.</b> Higher thermal expansion (23 vs 17 µm/m·K) gives more relative movement against enamel and varnish. Use a resin system rated for it and run thermal-cycling tests.</li>
+    <li><b>Thermal.</b> The recommended design has equal or lower total loss at the operating points and a longer stack with more cooling surface, so winding temperature should stay at or below the copper design. Re-run the Motor-CAD thermal model with the aluminium winding properties and the new stack.</li>
+    <li><b>Mechanical.</b> A longer stack lengthens the rotor (bearing span, first bending mode at 12 000 rpm), the housing, and the magnet and lamination count. Check the rotor critical speed and the shaft.</li>
+    <li><b>Inverter.</b> Same 52 V, 360 A rms and 280 A DC; back-EMF and inductances are kept close to the copper design, so the controller calibration (MTPA tables) only needs regenerating, not redesigning.</li>
+  </ul>
+</section>
+
+<section id="limits">
+  <h2><span class="n">9</span>Assumptions and next steps</h2>
+  <ul>
+    <li>2D FEA scaling: end-region fringing is ignored, so the longer stacks are slightly optimistic, by about 1 % in torque. End-winding inductance is scaled with turns², and the end-winding length per turn is taken as unchanged (75.6 mm, −2 mm per mm of narrower tooth).</li>
+    <li>Winding and magnets at 100 °C in all designs (same as the Motor-CAD Lab run). Aluminium resistivity 2.826 µΩ·cm at 20 °C, α = 0.00403 /K.</li>
+    <li>AC loss uses the same Motor-CAD hybrid adjustment factor (2) for all strand counts. Multi-strand coils can also carry circulating current between strands if they are not transposed; Motor-CAD's full hybrid AC model should confirm the chosen strand count.</li>
+    <li>Slot variants were solved on a 4 × 4 current grid, used as corrections on the 6 × 6 Lab map. Rotor iron loss is scaled with stack length only (slot opening unchanged).</li>
+    <li>Thin-lamination losses are first-order estimates (section 4.4).</li>
+  </ul>
+  <div class="note"><b>Next steps:</b> build the recommended design in Motor-CAD: slot depth, tooth width, stack, turns, strands, aluminium material and lamination grade. Run the Lab efficiency map and the thermal model, then compare against this report the same way the FEMM model was checked against Motor-CAD.</div>
+  <p class="src">Scripts: alu_femm.py (FEMM slot variants → alu_femm.json), alu_study.py (scaled design model), alu_sweep.py (design sweep → alu_sweep.json), alu_report.py (this report). Folder: Spoke_V2_backemf.</p>
+</section>
+</div>

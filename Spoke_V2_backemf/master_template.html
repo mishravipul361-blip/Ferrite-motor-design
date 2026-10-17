@@ -1,0 +1,213 @@
+<title>Spoke V2 FEM Tuning Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 1160px) with a sticky section index on wide screens; the story runs earlier -> tuned -> final -> next steps */
+:root{
+  --bg:#f4f6f7; --panel:#ffffff; --fg:#16202a; --muted:#596673; --line:#d4dce2; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --ok:#1f7a3a; --ok-soft:#e1f3e6; --mid:#a15c00; --mid-soft:#fbf0de; --bad:#b42318; --bad-soft:#fde4e1;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px;padding-block:28px 72px;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.8rem,4.2vw,2.7rem);font-weight:800}
+h2{font-size:1.4rem;font-weight:700;display:flex;gap:.6em;align-items:baseline;scroll-margin-top:16px}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1.02rem;font-weight:700}
+p{margin:0;max-width:76ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px 8px}
+nav.toc a{font-size:.85rem;color:var(--accent);text-decoration:none;border:1px solid var(--line);background:var(--panel);padding:4px 10px;border-radius:999px}
+nav.toc a:hover,nav.toc a:focus-visible{border-color:var(--accent);outline:none}
+section{display:flex;flex-direction:column;gap:16px}
+.stages{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:12px}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.stage .t{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage.now{border-color:var(--ok);background:var(--ok-soft)}
+.stage .big{font-family:var(--f-mono);font-size:1.25rem;font-weight:600}
+.cause{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+.cause h3{display:flex;gap:.6em;align-items:baseline;flex-wrap:wrap}
+.tag{font-family:var(--f-mono);font-size:.72rem;padding:2px 8px;border-radius:999px;background:var(--bad-soft);color:var(--bad)}
+.tag.mid{background:var(--mid-soft);color:var(--mid)} .tag.ok{background:var(--ok-soft);color:var(--ok)}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure img{display:block;width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+figcaption{font-size:.85rem;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,480px),1fr));gap:18px}
+.grid2>*{min-width:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.84rem}
+td.txt{font-family:var(--f-body);font-size:.9rem}
+.src{font-family:var(--f-body);font-size:.78rem;color:var(--muted)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.mid{background:var(--mid-soft);color:var(--mid)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.okbox{background:var(--ok-soft);border-left:3px solid var(--ok);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.note{background:var(--mid-soft);border-left:3px solid var(--mid);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+ul,ol{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:6px;max-width:86ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+details{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px 14px}
+details summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:10px}
+.req td:first-child{font-family:var(--f-mono);color:var(--accent);font-weight:600}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">FEMM 2D model tuned to Ansys Motor-CAD · 12-slot / 10-pole ferrite spoke · 52 V</span>
+  <h1>Spoke V2 FEM tuning report</h1>
+  <p class="muted">One document covering the earlier FEMM results, how the model was tuned step by step to match Motor-CAD, the root cause of each mismatch, the final torque-speed and efficiency maps, what can still be improved, and what data from Motor-CAD would close the remaining gaps.</p>
+  <div class="meta"><span>Motor-CAD: ADAPTIVE_MODEL_COMPLETE_4 / _tuning.mot</span><span>FEMM 4.2</span><span>Lab: 52 V, Mi 0.95, 360 A rms, 280 A DC, MTPA, 100 °C</span><span>11 Oct 2026</span></div>
+  <nav class="toc" aria-label="Sections">
+    <a href="#summary">1 Summary</a><a href="#journey">2 Earlier vs now</a><a href="#tuning">3 Tuning steps</a><a href="#rca">4 Root causes</a>
+    <a href="#final">5 Final maps</a><a href="#scope">6 Scope for improvement</a><a href="#data">7 Data needed from you</a><a href="#files">8 Files</a>
+  </nav>
+</header>
+
+<section id="summary">
+  <h2><span class="n">1</span>Summary</h2>
+  <div class="stages">
+    <div class="stage"><span class="t">Stage 1 · first FEMM model</span><span class="big">EMF 8.262 V (+0.6 %)</span><p class="src">Geometry and winding from Motor-CAD; typical M235-35A curve; no fillets; coarse 10° el step.</p></div>
+    <div class="stage"><span class="t">Stage 2 · back-EMF tuned</span><span class="big">EMF 8.187 V (−0.3 %)</span><p class="src">Motor-CAD B-H curve, fillets, 2° el step; THD 5.52 % when sampled like Motor-CAD (Motor-CAD 5.42 %).</p></div>
+    <div class="stage"><span class="t">Stage 3 · first Lab maps (v1)</span><span class="big">peak η 96.45 %</span><p class="src">Efficiency +1.9 points too high; iron loss 56 % too low.</p></div>
+    <div class="stage now"><span class="t">Stage 4 · tuned Lab model (v2)</span><span class="big">peak η 95.28 %</span><p class="src">Motor-CAD 95.34 %. Efficiency −0.6 points on average; iron loss +7 %; total loss +4 %.</p></div>
+  </div>
+  <div class="okbox"><b>The FEMM model is now consistent with Motor-CAD.</b> Back-EMF is within 0.5 %. Torque, current, voltage, power factor and flux linkage are within 1–2 %. DC copper and mechanical loss are exact. Efficiency is within about ±0.5 points along the envelope and 0.8 % on average over 788 map points.</div>
+</section>
+
+<section id="journey">
+  <h2><span class="n">2</span>Earlier report vs now</h2>
+  <p>The earlier Lab report (v1) and the corrected one (v2), both overlaid on your Motor-CAD Lab export, on the same speed and torque points.</p>
+  <figure><img src="{{IMG_EFFMAPS}}" alt="Efficiency maps Motor-CAD, FEMM now, FEMM before"><figcaption>Left: Motor-CAD. Middle: FEMM now. Right: FEMM in the earlier report, where the 95 % island is far too large.</figcaption></figure>
+  <figure><img src="{{IMG_EFFDIFF}}" alt="Efficiency difference maps"><figcaption>Efficiency difference, FEMM − Motor-CAD. Before: +1 to +3 points over most of the map. Now: mostly within ±0.5 points.</figcaption></figure>
+  <figure><img src="{{IMG_ENV}}" alt="Envelope comparison"><figcaption>Envelope. Grey dashed: earlier report. Blue: now. Orange: Motor-CAD.</figcaption></figure>
+  <figure><img src="{{IMG_ENVLOSS}}" alt="Loss components along the envelope"><figcaption>Loss components along the envelope. Copper (DC and AC) always matched; the whole correction is in stator and rotor iron loss.</figcaption></figure>
+  <div class="tbl"><table>
+    <tr><th>Quantity (all map points)</th><th>Earlier: mean |error|</th><th>bias</th><th>Now: mean |error|</th><th>bias</th></tr>
+    {{ERR_ROWS}}
+  </table></div>
+  <figure><img src="{{IMG_PARITY}}" alt="Parity plots"><figcaption>FEMM against Motor-CAD at identical currents and speed. Grey: earlier. Blue: now.</figcaption></figure>
+</section>
+
+<section id="tuning">
+  <h2><span class="n">3</span>How the model was tuned, step by step</h2>
+  <div class="tbl"><table>
+    <tr><th>#</th><th>What was compared</th><th>Mismatch found</th><th>Change made</th><th>Result</th></tr>
+    <tr><td>1</td><td class="txt">Stator lamination mass</td><td class="txt">–</td><td class="txt">checked geometry and stacking 0.97</td><td class="txt">yoke 1.996 kg exact; teeth 1.603 kg vs 1.615 kg</td></tr>
+    <tr><td>2</td><td class="txt">Back-EMF rms (20 °C, 1000 rpm)</td><td class="txt">+0.6 %</td><td class="txt">Motor-CAD M235-35A B-H table instead of a typical curve</td><td class="txt">−0.3 % (8.187 vs 8.213 V)</td></tr>
+    <tr><td>3</td><td class="txt">THD and cogging</td><td class="txt">THD 3.2 % vs 5.42 %; cogging aliased</td><td class="txt">finer rotor steps (2° el back-EMF, 0.1° mech cogging)</td><td class="txt">THD 7.4 % full resolution; 5.52 % when sampled at Motor-CAD's 30 points per cycle</td></tr>
+    <tr><td>4</td><td class="txt">Cogging peak-to-peak</td><td class="txt">0.86 vs 0.663 N·m</td><td class="txt">added fillets (0.3 / 1.0 / 1.95 mm); 4× finer air-gap mesh</td><td class="txt">each under 2 %; remaining gap attributed to Motor-CAD's coarse sampling (to be confirmed, item 7.1)</td></tr>
+    <tr><td>5</td><td class="txt">Magnet temperature</td><td class="txt">–</td><td class="txt">Motor-CAD flux coefficient −0.1797 %/K</td><td class="txt">Br 0.3939 T at 100 °C; ψm 19.65 vs 19.74 mVs</td></tr>
+    <tr><td>6</td><td class="txt">Lab envelope and map (v1)</td><td class="txt">efficiency +1.9 pt; iron loss −56 %</td><td class="txt">eddy term corrected to 2π²·Keddy·f²·B²</td><td class="txt">no-load eddy 2.4 vs 2.43 W</td></tr>
+    <tr><td>7</td><td class="txt">Iron loss under load and field weakening</td><td class="txt">rotor −93 %; no load dependence</td><td class="txt">full electrical cycle per operating point (30 points per cycle)</td><td class="txt">first attempt overstated loss because of mesh noise (step 8)</td></tr>
+    <tr><td>8</td><td class="txt">Full-cycle fields</td><td class="txt">remeshing noise; rotor 13–35 W at no load</td><td class="txt">FEMM air-gap element: mesh fixed, rotor turned via boundary</td><td class="txt">rotor no-load 0.8 vs 1.2 W</td></tr>
+    <tr><td>9</td><td class="txt">Steinmetz formulation (offline, 788 points)</td><td class="txt">all harmonics +74 %; fundamental −31 %</td><td class="txt">stator peak-B; rotor per harmonic</td><td class="txt">iron loss +7 %; efficiency −0.6 pt</td></tr>
+  </table></div>
+</section>
+
+<section id="rca">
+  <h2><span class="n">4</span>Root-cause analysis</h2>
+  <p>Root causes of every mismatch, in order of their effect on the efficiency map.</p>
+  <div class="cause"><h3><span class="tag">main cause</span>Eddy-current loss formula missing 2π²</h3>
+    <p>Motor-CAD's Steinmetz model is <code>Kh·f·B^α + 2π²·Keddy·f²·B²</code>. The earlier FEMM model used <code>Keddy·f²·B²</code>, which made eddy loss about 20× too small. Eddy loss grows with f², so the error grew with speed. That is why the earlier high-speed efficiency was 1.5–3 points too high.</p>
+    <p class="src">Proof: your loss chart. At 2500 Hz and 0.5 T the formula with 2π² gives 83 W/kg, against about 85 W/kg plotted; without 2π² it gives 18.5 W/kg.</p></div>
+  <div class="cause"><h3><span class="tag">cause 2</span>Iron loss from one field snapshot at the fundamental frequency</h3>
+    <p>The earlier model took B at 4 rotor positions, assumed a sinusoid at the electrical frequency, and estimated rotor loss from slot ripple. That misses (a) how iron loss grows with load and field weakening, and (b) the rotor iron loss, which comes only from slot and stator-MMF harmonics. Rotor loss came out 93 % too low (5 W against 44 W at 4000 rpm).</p></div>
+  <div class="cause"><h3><span class="tag mid">numerical</span>FEMM remeshing between rotor positions</h3>
+    <p>With <code>mi_moverotate</code>, FEMM builds a new mesh at every position, and only about 30 % of elements stay in place. Element-wise flux density then jumps between positions, and the jumps look like harmonics. The n²-weighted eddy term amplifies them, so the first full-cycle attempt gave about 2× stator and 10–25× rotor loss. Fixed with FEMM's air-gap element, which keeps the mesh constant.</p></div>
+  <div class="cause"><h3><span class="tag mid">model choice</span>How harmonics are counted</h3>
+    <p>With clean fields, counting every stator harmonic gives +94 % stator loss: the 9th/11th yoke harmonics add eddy loss that Motor-CAD's numbers do not contain. Peak-B Steinmetz in the stator (+11 %) and per-harmonic Steinmetz in the rotor (−12 %) reproduce Motor-CAD best. Motor-CAD's exact internal option is not visible from the exports (item 7.3 would confirm it).</p></div>
+  <div class="cause"><h3><span class="tag ok">back-EMF stage</span>Material curve and sampling</h3>
+    <p>The +0.6 % back-EMF offset came from the typical B-H curve; Motor-CAD's own curve removed it. The THD and cogging gaps came from different time resolution, not from different physics. Sampled the same way, FEMM's THD is 5.52 % against Motor-CAD's 5.42 %.</p></div>
+  <div class="cause"><h3><span class="tag ok">no change needed</span>What was right from the start</h3>
+    <p>Geometry (yoke mass exact), winding (R, MLT, turns, k<sub>w1</sub> exact), d-q flux linkage and torque (1–2 %), DC copper and mechanical loss (exact), AC copper loss (±9 %, no bias), drive limits and MTPA control.</p></div>
+</section>
+
+<section id="final">
+  <h2><span class="n">5</span>Final Lab maps (tuned model, 100 °C)</h2>
+  <div class="note"><b>Range:</b> the maps run to 12 000 rpm (your Lab maximum speed), but the Motor-CAD export stops at 9000 rpm, so FEMM above 9000 rpm is not checked against Motor-CAD.</div>
+  <figure><img src="{{IMG_VAL}}" alt="Back-EMF and cogging validation"><figcaption>Back-EMF and cogging against Motor-CAD (20 °C, 1000 rpm).</figcaption></figure>
+  <figure><img src="{{IMG_LAB_ENV}}" alt="Torque and power envelope"><figcaption>Peak torque 44.5 N·m (current-limited to about 2900 rpm), then 13.2–13.7 kW, limited by the 280 A DC current, to 9000 rpm.</figcaption></figure>
+  <figure><img src="{{IMG_LAB_ENV2}}" alt="Currents, voltage and losses along the envelope"></figure>
+  <figure><img src="{{IMG_EFF}}" alt="Efficiency map"><figcaption>Peak efficiency 95.3 % at 4200 rpm, 18.5 N·m.</figcaption></figure>
+  <div class="grid2">
+    <figure><img src="{{IMG_LOSS}}" alt="Total loss map"></figure>
+    <figure><img src="{{IMG_PFE}}" alt="Iron loss map"></figure>
+    <figure><img src="{{IMG_PCU}}" alt="DC copper loss map"></figure>
+    <figure><img src="{{IMG_PAC}}" alt="AC copper loss map"></figure>
+  </div>
+  <details><summary>Electrical maps and d-q flux map</summary>
+    <div class="grid2">
+      <figure><img src="{{IMG_I}}" alt="Line current map"></figure>
+      <figure><img src="{{IMG_IDC}}" alt="DC current map"></figure>
+      <figure><img src="{{IMG_V}}" alt="Phase voltage map"></figure>
+      <figure><img src="{{IMG_PF}}" alt="Power factor map"></figure>
+      <figure><img src="{{IMG_GAMMA}}" alt="Current angle map"></figure>
+    </div>
+    <figure><img src="{{IMG_DQ}}" alt="d-q flux linkage map"></figure>
+  </details>
+</section>
+
+<section id="scope">
+  <h2><span class="n">6</span>Remaining differences and scope for improvement</h2>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>Now</th><th>Likely reason</th><th>Improvement</th><th>Needs (section 7)</th></tr>
+    <tr><td class="txt">Stator iron loss</td><td>+11 to +16 %</td><td class="txt">exact Motor-CAD iron-loss option (harmonics, minor loops Kc 0.65) not known; FEMM mesh near the tooth tips</td><td class="txt">use Motor-CAD's exact option; compare loss density at one point</td><td class="txt">7.3, 7.4</td></tr>
+    <tr><td class="txt">Rotor iron loss</td><td>−12 %</td><td class="txt">one-cycle evaluation; bridge mesh</td><td class="txt">finer bridge mesh; rotor loss over the full slot period</td><td class="txt">7.3</td></tr>
+    <tr><td class="txt">Envelope efficiency 7500–9000 rpm</td><td>−0.4 to −0.9 pt</td><td class="txt">operating point chosen at the DC-current limit; AC loss model</td><td class="txt">compare Motor-CAD's id/iq on the envelope; tune the AC loss model</td><td class="txt">7.5, 7.6</td></tr>
+    <tr><td class="txt">AC copper loss</td><td>±9 % scatter</td><td class="txt">conductor positions in the slot not modelled (FEMM uses a uniform coil side)</td><td class="txt">model each conductor at its Motor-CAD position</td><td class="txt">7.6</td></tr>
+    <tr><td class="txt">Cogging peak-to-peak</td><td>0.86 vs 0.663 N·m</td><td class="txt">probably Motor-CAD's coarse cogging sampling</td><td class="txt">match the point count and compare raw data</td><td class="txt">7.1, 7.2</td></tr>
+    <tr><td class="txt">Back-EMF THD</td><td>7.4 % full; 5.5 % sampled</td><td class="txt">time resolution</td><td class="txt">match points per cycle</td><td class="txt">7.1</td></tr>
+    <tr><td class="txt">Peak torque</td><td>44.5 vs 45.3 N·m (−1.8 %)</td><td class="txt">d-q grid 6 × 6 against Motor-CAD's 30-point model; 2D field differences in the saturated pole neck</td><td class="txt">denser d-q map near MTPA; compare ψd and ψq maps</td><td class="txt">7.5</td></tr>
+    <tr><td class="txt">Geometry detail</td><td class="txt">rebuilt from parameters</td><td class="txt">"Rotor lamination inset", template-specific details</td><td class="txt">import the exact cross-section</td><td class="txt">7.7</td></tr>
+    <tr><td class="txt">Above 9000 rpm</td><td class="txt">not validated</td><td class="txt">Motor-CAD export stops at 9000 rpm</td><td class="txt">extend the comparison</td><td class="txt">7.8</td></tr>
+    <tr><td class="txt">3D effects</td><td class="txt">not modelled (both tools 2D)</td><td class="txt">spoke-rotor end leakage</td><td class="txt">apply a 3D factor from test or 3D FEA</td><td class="txt">7.9</td></tr>
+  </table></div>
+</section>
+
+<section id="data">
+  <h2><span class="n">7</span>What to send to improve the match further</h2>
+  <p>Listed by benefit. The first five resolve most of the remaining differences. Copy-paste or Excel export is fine for all of them.</p>
+  <div class="tbl req"><table>
+    <tr><th>#</th><th>What</th><th>Where in Motor-CAD</th><th>Why it helps</th></tr>
+    <tr><td>7.1</td><td class="txt">Points per cycle for back-EMF, cogging and torque; mesh settings</td><td class="txt">Calculation › E-Magnetics (and Input Data › Settings › E-Magnetics / FEA mesh)</td><td class="txt">confirms the THD and cogging explanation, and lets FEMM use the same sampling</td></tr>
+    <tr><td>7.2</td><td class="txt">Graph data: back-EMF, cogging (CE + VW), air-gap flux density, flux linkage open circuit</td><td class="txt">Graphs › Data, select all, copy to Excel</td><td class="txt">replaces the photo digitising (±0.15 V uncertainty) with exact curves</td></tr>
+    <tr><td>7.3</td><td class="txt">Iron-loss calculation options: harmonic or peak method, minor loops (Kc), "iron loss points per cycle", "FEA iron loss" settings</td><td class="txt">Input Data › Settings › Losses / E-Magnetics, and the Lab › Loss Model build options</td><td class="txt">pins down the formulation; removes the remaining +11 % / −12 % iron-loss bias</td></tr>
+    <tr><td>7.4</td><td class="txt">One on-load E-Magnetics run with iron-loss output: stator tooth, back iron, rotor pole, back iron, hysteresis and eddy split, plus the iron-loss density plot</td><td class="txt">Calculation › E-Magnetics at, say, 4000 rpm, 20 N·m (or 150 A, 30° advance); Output Data › Losses</td><td class="txt">region-by-region check of where FEMM's iron loss differs</td></tr>
+    <tr><td>7.5</td><td class="txt">Lab saturation model data: ψd, ψq, torque, Ld, Lq versus id, iq</td><td class="txt">Lab › Model Build (saturation model), export; or Lab › Electromagnetic › saturation-model graphs</td><td class="txt">direct d-q map comparison; explains the −1.8 % peak torque</td></tr>
+    <tr><td>7.6</td><td class="txt">AC loss settings and per-point AC loss at 2–3 speeds; conductor layout</td><td class="txt">Winding › conductor positions graphic, Settings › AC Winding, Output Data › AC losses</td><td class="txt">model each conductor in FEMM for an exact AC-loss match</td></tr>
+    <tr><td>7.7</td><td class="txt">Cross-section geometry as DXF, and the adaptive template script</td><td class="txt">Geometry › Editor › Export DXF; Geometry › Adaptive templates (the .py)</td><td class="txt">exact geometry, including the "Rotor lamination inset" and fillets</td></tr>
+    <tr><td>7.8</td><td class="txt">Lab envelope and map up to 12 000 rpm</td><td class="txt">Lab › Settings, maximum speed 12 000; export as before</td><td class="txt">validates the 9000–12 000 rpm region</td></tr>
+    <tr><td>7.9</td><td class="txt">Any test data (back-EMF, no-load loss, efficiency points)</td><td class="txt">test bench</td><td class="txt">anchors both models to the real motor (3D effects, build factors)</td></tr>
+  </table></div>
+</section>
+
+<section id="files">
+  <h2><span class="n">8</span>Files and how to rerun</h2>
+  <p class="muted">Everything is in <code>E:\TVSM\Motor Design\FEM\Spoke_V2_backemf\</code>.</p>
+  <div class="tbl"><table>
+    <tr><th>File</th><th>Purpose</th><th>Run time</th></tr>
+    <tr><td>FEMM_models\*.fem / .ans</td><td class="txt">readable FEMM models: no load 20 °C and 100 °C, peak torque at 100 °C (README inside)</td><td>–</td></tr>
+    <tr><td>backemf.py, hires.py</td><td class="txt">geometry build; back-EMF and cogging sweeps</td><td>15–80 min</td></tr>
+    <tr><td>lab_map.py solve</td><td class="txt">d-q flux map at 100 °C</td><td>about 1.7 h</td></tr>
+    <tr><td>iron_loss_age.py</td><td class="txt">fixed-mesh full-cycle iron-loss fields</td><td>about 5.5 h</td></tr>
+    <tr><td>iron_fit.py, lab_model.py, make_lab_v2.py</td><td class="txt">loss model, maps, envelope (no FEMM solves)</td><td>seconds</td></tr>
+    <tr><td>compare_mcad_lab.py</td><td class="txt">comparison against the Motor-CAD exports in mcad_lab\</td><td>minutes</td></tr>
+    <tr><td>master_report.html</td><td class="txt">this report (build_master_report.py)</td><td>seconds</td></tr>
+  </table></div>
+  <p class="muted">Why some steps took long: every FEMM solve is a full nonlinear 360° model (about 1.5–2 min on this 4-core laptop). Iron loss needs 15 rotor positions × 12 current points = 180 solves. A laptop sleep (06:32–09:34) and two restarts for sampling fixes added about 4 h. All results are cached, so changing temperatures, limits or loss settings now takes seconds.</p>
+</section>
+</div>

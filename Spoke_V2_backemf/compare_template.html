@@ -1,0 +1,205 @@
+<title>Spoke V2 Motor-CAD vs FEMM</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 1100px); each comparison = overlay chart + difference/numbers beside it, stacking on phones */
+:root{
+  --bg:#f5f7f8; --panel:#ffffff; --fg:#17212b; --muted:#5a6773; --line:#d5dde3; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --mcad:#c2410c; --mcad-soft:#f0b89a; --femm:#1d4ed8; --diff:#6b21a8;
+  --ok:#1f7a3a; --ok-soft:#e1f3e6; --mid:#a15c00; --mid-soft:#fbf0de; --bad:#b42318; --bad-soft:#fde4e1;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --mcad:#fb923c; --mcad-soft:#7c4a2c; --femm:#7aa2ff; --diff:#c084fc;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --mcad:#fb923c; --mcad-soft:#7c4a2c; --femm:#7aa2ff; --diff:#c084fc;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1100px;margin:0 auto;padding-inline:20px;padding-block:28px 64px;display:flex;flex-direction:column;gap:40px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.35rem;font-weight:700;display:flex;gap:.6em;align-items:baseline}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1rem;font-weight:700}
+p{margin:0;max-width:70ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 22px;font-family:var(--f-mono);font-size:.8rem;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:16px}
+.verdict{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.vc{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.vc .v{font-family:var(--f-mono);font-size:1.45rem;font-weight:600;font-variant-numeric:tabular-nums}
+.vc .l{font-size:.82rem;color:var(--muted)}
+.vc.ok{border-color:var(--ok);background:var(--ok-soft)} .vc.mid{border-color:var(--mid);background:var(--mid-soft)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,440px),1fr));gap:20px}
+.grid2>*{min-width:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{text-align:left;padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.85rem}
+td.txt{font-family:var(--f-body);font-size:.9rem}
+.src{font-family:var(--f-body);font-size:.78rem;color:var(--muted)}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.mid{background:var(--mid-soft);color:var(--mid)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.chart svg{width:100%;height:auto;display:block}
+.chart .gr{stroke:var(--line);stroke-width:1}
+.chart .ax{stroke:var(--muted);stroke-width:1}
+.chart text{fill:var(--muted);font-family:var(--f-mono);font-size:11px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem}
+.legend span::before{content:"";display:inline-block;width:18px;height:3px;margin-right:6px;vertical-align:middle;background:var(--c)}
+.legend span.dot::before{width:8px;height:8px;border-radius:50%}
+.legend span.dash::before{background:repeating-linear-gradient(90deg,var(--c) 0 5px,transparent 5px 9px)}
+.note{background:var(--mid-soft);border-left:3px solid var(--mid);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+ul,ol{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:5px;max-width:78ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">No-load verification · 1000 rpm · magnets 20 °C · delta</span>
+  <h1>Spoke V2: Motor-CAD vs FEMM</h1>
+  <p class="muted">The back-EMF, air-gap flux density and cogging torque from Ansys Motor-CAD (<code>ADAPTIVE_MODEL_COMPLETE_4.mot</code>), overlaid on the independent FEMM 2D model of the same motor. The Motor-CAD curves were digitised from the screen photographs; section 6 describes how and how accurate that is.</p>
+  <div class="meta"><span>Motor-CAD v2026.1.1</span><span>FEMM 4.2</span><span>10 Oct 2026</span><span>FEMM run: 36 rotor positions, 10° el steps</span></div>
+</header>
+
+<section>
+  <h2><span class="n">1</span>Verdict</h2>
+  <div class="verdict">
+    <div class="vc ok"><span class="l">Back-EMF rms, FEMM vs Motor-CAD</span><span class="v">+0.6 %</span><span class="l">8.262 V vs 8.213 V</span></div>
+    <div class="vc ok"><span class="l">Back-EMF fundamental</span><span class="v">+0.7 %</span><span class="l">__F1_F__ V vs 11.60 V peak</span></div>
+    <div class="vc ok"><span class="l">Waveform difference (same 20° window)</span><span class="v">__DIFF_RMS__ V</span><span class="l">rms over one period; max __DIFF_MAX__ V</span></div>
+    <div class="vc ok"><span class="l">Winding data and resistance</span><span class="v">exact</span><span class="l">R, MLT, turns, k<sub>w1</sub>, CSA, stacking</span></div>
+    <div class="vc mid"><span class="l">EMF harmonics, cogging</span><span class="v">needs finer FEMM run</span><span class="l">10° el steps cannot resolve the slot harmonics</span></div>
+  </div>
+  <p>The FEMM model reproduces the Motor-CAD open-circuit result. Every quantity that the FEMM run resolves agrees within 2 %. The two items marked amber are limits of the coarse FEMM rotor step, not model disagreements. Section 7 lists what to change to tune FEMM further.</p>
+  <div class="tbl"><table>
+    <tr><th>Output</th><th>Motor-CAD</th><th>FEMM</th><th>Unit</th><th>FEMM vs Motor-CAD</th><th>Note</th></tr>
+    __ROWS__
+  </table></div>
+  <p class="src">Motor-CAD values are read from the Output Data screens (Drive, E-Magnetics, Equivalent Circuit, Flux Densities, Winding). Green is within 2 %, amber 2–6 %, red over 6 %. Tooth and back-iron maxima are defined differently in the two tools: Motor-CAD takes the maximum at its sample points, while FEMM reports the 99th percentile of every element in the region.</p>
+</section>
+
+<section>
+  <h2><span class="n">2</span>Back-EMF: phase 1 (= line-line, delta)</h2>
+  <div class="card chart"><h3>Overlay @ 1000 rpm</h3><div id="c-emf"></div>
+    <div class="legend"><span style="--c:var(--mcad)">Motor-CAD (digitised, 1° el)</span><span class="dash" style="--c:var(--mcad)">Motor-CAD averaged over ±10° el</span><span class="dot" style="--c:var(--femm)">FEMM (36 positions)</span></div>
+    <p class="src">FEMM is shifted by __D_EL__° el so both curves share the same angle origin (the two tools put rotor position 0 in different places). FEMM computes EMF as the change in flux linkage over ±10° el, which is the mean EMF over that 20° window. The dashed Motor-CAD curve is averaged over the same window, so it is the like-for-like reference for the blue points.</p></div>
+  <div class="grid2">
+    <div class="card chart"><h3>Difference: FEMM − Motor-CAD (window-averaged)</h3><div id="c-diff"></div>
+      <p class="src">rms __DIFF_RMS__ V, max __DIFF_MAX__ V. That is about 2 % of the rms EMF and close to the ±0.15 V uncertainty of the digitisation.</p></div>
+    <div class="card chart"><h3>Harmonic spectrum (% of fundamental)</h3><div id="c-harm"></div>
+      <div class="legend"><span style="--c:var(--mcad)">Motor-CAD, full curve</span><span style="--c:var(--mcad-soft)">Motor-CAD, ±10° window</span><span style="--c:var(--femm)">FEMM</span></div></div>
+  </div>
+  <div class="tbl"><table>
+    <tr><th>Back-EMF @ 1000 rpm</th><th>Motor-CAD (screen)</th><th>Motor-CAD (digitised)</th><th>FEMM</th></tr>
+    <tr><td class="txt">rms</td><td>8.213 V</td><td>__RMS_M__ V</td><td>__RMS_F__ V</td></tr>
+    <tr><td class="txt">peak</td><td>11.51 V</td><td>__PK_M__ V</td><td>11.452 V (sampled)</td></tr>
+    <tr><td class="txt">fundamental peak</td><td>11.60 V</td><td>__F1_M__ V</td><td>__F1_F__ V</td></tr>
+    <tr><td class="txt">THD, full curve</td><td>5.42 %</td><td>__THD_M__ %</td><td>not resolved</td></tr>
+    <tr><td class="txt">THD, ±10° el window (like-for-like)</td><td>–</td><td>__THD_MA__ %</td><td>__THD_F__ %</td></tr>
+  </table></div>
+  <p class="muted">The 11th harmonic is the slot harmonic of 12 slots / 10 poles, and it dominates both spectra. FEMM shows somewhat more 11th than Motor-CAD after windowing. Part of that is aliasing: with 36 samples per period, the 25th harmonic folds onto the 11th. A FEMM run at 1° el steps would settle this.</p>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Air-gap radial flux density</h2>
+  <div class="card chart"><h3>Br at no load around the full air gap (1800° el = 360° mech)</h3><div id="c-gap"></div>
+    <div class="legend"><span style="--c:var(--mcad)">Motor-CAD (digitised)</span><span style="--c:var(--femm)">FEMM, mid-gap, rotor 0°</span></div>
+    <p class="src">The FEMM trace is rotated by __G_SH__° el to match Motor-CAD's angle origin. Gaps in the Motor-CAD trace are where the photo is unreadable because of screen moiré. The rms difference over the readable part is __G_ERR__ T, and it is concentrated on the vertical edges, where a small angle error gives a large value error. Plateau levels (0.82–0.83 T), the slot-opening dips and the bridge spikes all coincide. Motor-CAD reports a maximum of 0.834 T; FEMM gives 0.832 T.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">4</span>Cogging torque</h2>
+  <div class="grid2">
+    <div class="card chart"><h3>One cogging period (6° mech)</h3><div id="c-cog"></div>
+      <div class="legend"><span style="--c:var(--mcad)">Motor-CAD VW (digitised)</span><span class="dot" style="--c:var(--femm)">FEMM no-load samples, folded</span></div></div>
+    <div class="card"><h3>What this comparison can and cannot show</h3>
+      <p>The FEMM no-load run turned the rotor in 2° steps. Folded into the 6° cogging period, that gives only three distinct positions (0, 2 and 4°), each solved 12 times. The 12 repeats agree, which confirms the mesh is consistent from one rotor step to the next. The three points sit on the Motor-CAD curve once the origin is shifted by __C_SH__°.</p>
+      <p>FEMM's pk-pk value from those three points (__COG_F__ N·m) is a lower bound, not a measurement. Motor-CAD gives 0.663 N·m (VW) and 0.731 N·m (CE). A dedicated FEMM cogging sweep at 0.1–0.2° steps (about 10 min) is the next step if cogging needs tuning.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">5</span>What the Motor-CAD outputs show about its setup</h2>
+  <ul>
+    <li><b>Delta connection.</b> Line-line EMF equals phase EMF (8.213 V), "Max line-line / phase voltage ratio" is 1, and line-line resistance is ⅔ of phase (3.399 vs 5.098 mΩ). FEMM's phase result applies directly.</li>
+    <li><b>Magnet and winding temperature 20 °C.</b> The conductor temperature reads 20 °C and the phase resistance of 5.098 mΩ equals the 20 °C value. The EMF level agrees with FEMM's Br of 0.46 T.</li>
+    <li><b>End-winding MLT factor 0.7</b> (108 mm calculated → 75.62 mm used) and <b>end-winding inductance factor 0.7</b>. These are user settings that change resistance and inductance, not back-EMF. FEMM's resistance uses the same 75.62 mm, which is why it matches exactly.</li>
+    <li><b>Stacking factor 0.97</b> on stator and rotor. This is the value FEMM uses, and it was confirmed independently from the lamination masses.</li>
+    <li><b>Phase advance 78.17° and drive offset 75° el.</b> These do not act at open circuit (I = 0), and the d/q flux linkages are pure magnet flux (ψd = 22.05 mVs, ψq ≈ 0).</li>
+    <li><b>Air-gap graph labelled "on load"</b> with zero current is the same as the open-circuit field.</li>
+    <li><b>Output values that are zero</b> (rotor inertia, magnet and rotor weight, Ld/Lq) come from the adaptive rotor template and a no-load-only run. They are expected and do not indicate an error.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="n">6</span>How the Motor-CAD curves were digitised</h2>
+  <ul>
+    <li>Each photo was corrected for camera perspective with a projective transform fitted to the four plot-frame corners. Each corner was located against its axis labels (for example ±12 V and 0/340° el for the back-EMF graph).</li>
+    <li>Curve pixels are pixels that are darker or more saturated than the local background. Text, grid lines and screen moiré were removed by stroke-shape filtering.</li>
+    <li>Back-EMF: the three phase curves were traced through their crossings, then folded onto phase 1 using the 120° shifts and half-wave symmetry, giving a full 0–360° curve from the visible 0–345°.</li>
+    <li><b>Accuracy check against Motor-CAD's own numbers:</b> rms __RMS_M__ vs 8.213 V (+0.15 %), peak __PK_M__ vs 11.51 V (+0.3 %), fundamental __F1_M__ vs 11.60 V (+0.15 %), cogging pk-pk 0.662 vs 0.663 N·m (−0.15 %). THD reads lower (__THD_M__ vs 5.42 %) because the photo cannot resolve harmonics above about the 20th.</li>
+    <li>Exporting the curves from Motor-CAD (Graphs › Data) would remove this step and the remaining ±0.15 V / ±0.01 T uncertainty.</li>
+  </ul>
+</section>
+
+<section>
+  <h2><span class="n">7</span>Tuning FEMM to Motor-CAD</h2>
+  <div class="note"><b>Where the remaining 0.6–1.7 % comes from, and what to change</b></div>
+  <div class="tbl"><table>
+    <tr><th>Item</th><th>FEMM now</th><th>Change to match Motor-CAD</th><th>Expected effect</th></tr>
+    <tr><td class="txt">M235-35A B-H curve</td><td class="txt">typical catalogue curve</td><td class="txt">Copy Motor-CAD's database curve (Input Data › Material database › Steel BH)</td><td class="txt">largest lever: EMF −0.5 to −1.5 % if Motor-CAD's curve is less permeable around 1.2–1.8 T (pole neck and bridges)</td></tr>
+    <tr><td class="txt">Fillets</td><td class="txt">none</td><td class="txt">slot corner 1.95, pocket 1.0, magnet 0.5, lamination 0.3 mm</td><td class="txt">pocket and magnet fillets change bridge leakage: ±0.5 %; tooth mass +0.009 kg</td></tr>
+    <tr><td class="txt">Rotor step</td><td class="txt">2° mech (10° el)</td><td class="txt">1° el for EMF, 0.1° mech for cogging (Motor-CAD style)</td><td class="txt">resolves THD (5.42 %) and cogging pk-pk (0.663 N·m)</td></tr>
+    <tr><td class="txt">Air-gap mesh</td><td class="txt">0.2 mm, 2 layers</td><td class="txt">0.1 mm, 4 layers</td><td class="txt">cogging accuracy; under 0.2 % on EMF</td></tr>
+    <tr><td class="txt">Flux-linkage definition</td><td class="txt">average A over the whole coil-side area</td><td class="txt">same as Motor-CAD (it also averages over the winding region)</td><td class="txt">already consistent</td></tr>
+  </table></div>
+  <p class="muted">Recommended order: (1) B-H curve, (2) fillets, (3) one fine run (EMF at 1° el plus cogging at 0.1°). Each step can be checked against this report.</p>
+</section>
+</div>
+
+<script>
+const D = __DATA__;
+function niceStep(r){const p=Math.pow(10,Math.floor(Math.log10(r)));const f=r/p;return(f<1.5?1:f<3?2:f<7?5:10)*p}
+function chart(id, series, o){
+  const W=o.W||980, Hh=o.H||300, m={l:52,r:12,t:10,b:38};
+  const ys=series.flatMap(s=>s.y.filter(v=>v!==null&&isFinite(v)));
+  let y0=o.y0??Math.min(...ys), y1=o.y1??Math.max(...ys); const pad=(y1-y0)*0.06||1; if(o.y0===undefined){y0-=pad;y1+=pad}
+  const step=niceStep((y1-y0)/6); y0=Math.floor(y0/step)*step; y1=Math.ceil(y1/step)*step;
+  const X=v=>m.l+(v-o.x0)/(o.x1-o.x0)*(W-m.l-m.r), Y=v=>Hh-m.b-(v-y0)/(y1-y0)*(Hh-m.t-m.b);
+  let s=`<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="${o.label}">`;
+  for(let v=y0;v<=y1+1e-9;v+=step)s+=`<line class="gr" x1="${m.l}" x2="${W-m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text x="${m.l-6}" y="${Y(v)+4}" text-anchor="end">${+v.toFixed(3)}</text>`;
+  for(let v=o.x0;v<=o.x1+1e-9;v+=o.xs)s+=`<line class="gr" y1="${m.t}" y2="${Hh-m.b}" x1="${X(v)}" x2="${X(v)}"/><text x="${X(v)}" y="${Hh-m.b+15}" text-anchor="middle">${+v.toFixed(2)}</text>`;
+  if(y0<0&&y1>0)s+=`<line class="ax" x1="${m.l}" x2="${W-m.r}" y1="${Y(0)}" y2="${Y(0)}"/>`;
+  s+=`<text x="${(m.l+W-m.r)/2}" y="${Hh-4}" text-anchor="middle">${o.xl}</text><text transform="translate(12 ${(Hh-m.b)/2}) rotate(-90)" text-anchor="middle">${o.yl}</text>`;
+  for(const se of series){
+    if(se.bars){const bw=(X(1)-X(0))*se.bw;se.x.forEach((x,i)=>{const v=se.y[i];s+=`<rect x="${X(x)+se.off*bw-bw/2}" y="${Y(Math.max(v,0))}" width="${bw*0.95}" height="${Math.abs(Y(v)-Y(0))}" fill="var(${se.c})"/>`});continue}
+    if(se.dots){se.x.forEach((x,i)=>s+=`<circle cx="${X(x).toFixed(1)}" cy="${Y(se.y[i]).toFixed(1)}" r="${se.r||3.2}" fill="var(${se.c})"/>`);continue}
+    let d='',pen=false;
+    se.x.forEach((x,i)=>{const v=se.y[i];if(v===null||!isFinite(v)){pen=false;return}d+=(pen?'L':'M')+X(x).toFixed(1)+' '+Y(v).toFixed(1);pen=true});
+    s+=`<path d="${d}" fill="none" stroke="var(${se.c})" stroke-width="${se.w||1.8}" ${se.dash?'stroke-dasharray="6 4"':''} stroke-linejoin="round"/>`;
+  }
+  document.getElementById(id).innerHTML=s+'</svg>';
+}
+const wrap=(x,y,p)=>({x:x.concat([x[0]+p]),y:y.concat([y[0]])});
+let a=wrap(D.th_m,D.e_m,360), b=wrap(D.th_m,D.e_m_avg,360);
+chart('c-emf',[{x:a.x,y:a.y,c:'--mcad',w:2},{x:b.x,y:b.y,c:'--mcad',dash:1,w:1.4},{x:D.th_f,y:D.e_f,c:'--femm',dots:1}],
+  {x0:0,x1:360,xs:30,xl:'rotor position (electrical deg)',yl:'V',label:'Back-EMF overlay'});
+chart('c-diff',[{x:D.th_f,y:D.diff,c:'--diff',w:1.8},{x:D.th_f,y:D.diff,c:'--diff',dots:1,r:2.5}],
+  {x0:0,x1:360,xs:60,xl:'electrical deg',yl:'V',W:520,H:270,y0:-0.5,y1:0.5,label:'EMF difference'});
+const n=[1,3,5,7,9,11,13], hx=n.map((_,i)=>i);
+const pick=h=>n.map(k=>h[k-1]);
+const lg=v=>v; // linear % scale, fundamental clipped to keep harmonics readable
+chart('c-harm',[{x:hx,y:pick(D.hm).map(v=>Math.min(v,7)),c:'--mcad',bars:1,bw:0.27,off:-1},{x:hx,y:pick(D.hma).map(v=>Math.min(v,7)),c:'--mcad-soft',bars:1,bw:0.27,off:0},{x:hx,y:pick(D.hf).map(v=>Math.min(v,7)),c:'--femm',bars:1,bw:0.27,off:1}],
+  {x0:-0.6,x1:6.6,xs:1,xl:'harmonic: 1, 3, 5, 7, 9, 11, 13 (fundamental bar clipped at 7 %)',yl:'%',W:520,H:270,y0:0,y1:7,label:'Harmonic spectrum'});
+chart('c-gap',[{x:D.gap_x,y:D.gap_f,c:'--femm',w:1.2},{x:D.gap_x,y:D.gap_m,c:'--mcad',w:1.6}],
+  {x0:0,x1:1800,xs:180,xl:'air-gap position (electrical deg)',yl:'Br (T)',y0:-0.9,y1:0.9,label:'Air-gap flux density overlay'});
+chart('c-cog',[{x:D.cog_x,y:D.cog_m,c:'--mcad',w:2},{x:D.cog_f.theta,y:D.cog_f.T,c:'--femm',dots:1}],
+  {x0:0,x1:6,xs:1,xl:'rotor position (mech deg)',yl:'N·m',W:520,H:280,y0:-0.4,y1:0.4,label:'Cogging overlay'});
+</script>

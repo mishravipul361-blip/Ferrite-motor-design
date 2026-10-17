@@ -1,0 +1,154 @@
+<title>Spoke V2 Operating Points</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one reading column (max 1160px): overview, per-point tables with loss bars, ripple, analysis, actions */
+:root{
+  --bg:#f4f6f7; --panel:#ffffff; --fg:#16202a; --muted:#596673; --line:#d4dce2; --accent:#0f6e8c; --accent-soft:#e1f0f5;
+  --ok:#1f7a3a; --ok-soft:#e1f3e6; --mid:#a15c00; --mid-soft:#fbf0de; --bad:#b42318; --bad-soft:#fde4e1;
+  --f-display:"Archivo","Helvetica Neue",Arial,sans-serif; --f-body:"Source Sans 3","Segoe UI",Arial,sans-serif; --f-mono:"JetBrains Mono",Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#10161c; --panel:#18212a; --fg:#e4eaef; --muted:#9aa8b4; --line:#2b3742; --accent:#55b8d6; --accent-soft:#163240;
+  --ok:#6fd08a; --ok-soft:#173222; --mid:#f0b260; --mid-soft:#33270f; --bad:#ff8a7e; --bad-soft:#3a1714; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font:16px/1.55 var(--f-body)}
+.wrap{max-width:1160px;margin:0 auto;padding-inline:20px;padding-block:28px 72px;display:flex;flex-direction:column;gap:42px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(1.7rem,4vw,2.5rem);font-weight:800}
+h2{font-size:1.35rem;font-weight:700;display:flex;gap:.6em;align-items:baseline}
+h2 .n{font-family:var(--f-mono);font-size:.85rem;color:var(--accent)}
+h3{font-size:1.02rem;font-weight:700}
+p{margin:0;max-width:76ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+header{display:flex;flex-direction:column;gap:12px;border-bottom:2px solid var(--fg);padding-bottom:20px}
+section{display:flex;flex-direction:column;gap:16px}
+.ops{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:12px}
+.op{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.op .t{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.op ul{font-size:.92rem}
+.split{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:860px){.split{grid-template-columns:1fr}}
+figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+figure img{display:block;width:100%;height:auto;border-radius:6px;border:1px solid var(--line);background:#fff}
+figcaption{font-size:.85rem;color:var(--muted)}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.86rem}
+th,td{text-align:left;padding:4px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+td{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.82rem}
+td.txt{font-family:var(--f-body);font-size:.88rem}
+td.u{color:var(--muted);font-size:.75rem}
+tr.grp td{font-family:var(--f-body);font-weight:600;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);padding-top:10px}
+.pill{display:inline-block;padding:1px 7px;border-radius:999px;font-size:.75rem;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.mid{background:var(--mid-soft);color:var(--mid)} .pill.bad{background:var(--bad-soft);color:var(--bad)}
+.okbox{background:var(--ok-soft);border-left:3px solid var(--ok);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.note{background:var(--mid-soft);border-left:3px solid var(--mid);padding:12px 16px;border-radius:0 6px 6px 0;display:flex;flex-direction:column;gap:6px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px 18px;display:flex;flex-direction:column;gap:8px}
+ul,ol{margin:0;padding-left:1.25em;display:flex;flex-direction:column;gap:5px;max-width:86ch}
+code{font-family:var(--f-mono);font-size:.85em;background:var(--accent-soft);padding:1px 4px;border-radius:3px}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Motor-CAD Lab operating points vs FEMM 2D · 52 V · winding and magnets 100 °C · delta</span>
+  <h1>Spoke V2: three operating points, one to one</h1>
+  <p class="muted">Every quantity on your three Motor-CAD Operating Point screens is compared with the tuned FEMM model, in two ways. <b>Same speed and torque</b>: FEMM chooses its own MTPA / field-weakening current, which is what Motor-CAD's Operating Point does. <b>Same current</b>: Motor-CAD's phase current and phase advance are put straight into FEMM, which isolates the flux, torque and loss models from the choice of operating point.</p>
+</header>
+
+<section>
+  <h2><span class="n">1</span>Overview</h2>
+  <div class="ops">
+    <div class="op"><span class="t">OP1 · 9000 rpm · maximum current</span>
+      <ul><li>Torque, power, efficiency: <b>within 0.1 %</b>; ripple −4 %</li><li>FEMM needs 3 % less current (DC-current limit reached slightly earlier)</li><li>Iron +5 %, AC copper 0 %, total loss −0.5 %</li><li>ψd differs ±11 % (small number: 2.95 mVs)</li></ul></div>
+    <div class="op"><span class="t">OP2 · 9339 rpm · 3.24 N·m (light load, deep field weakening)</span>
+      <ul><li>Torque −0.8 %, efficiency <b>−0.7 pt</b></li><li>FEMM loses 28 W more: AC copper +15 W (+11 %), iron +16 W (+7 %)</li><li>Lq +7 %, reluctance torque −10 % (0.05 N·m); ripple +15 %</li></ul></div>
+    <div class="op"><span class="t">OP3 · 2000 rpm · 44.9 N·m (peak torque)</span>
+      <ul><li>Motor-CAD uses 361.7 A (0.5 % above the 360 A limit); FEMM's maximum at 360 A is 44.3 N·m (−1.2 %)</li><li>At the same current: torque −1.0 %, efficiency +0.1 pt</li><li>Iron −16 % (−17 W), AC copper −8 %</li><li>MTPA angle: FEMM 23.2°, Motor-CAD 20.8°; ripple +24 %</li></ul></div>
+  </div>
+  <div class="okbox"><b>Verdict:</b> FEMM and Motor-CAD agree on torque (within 1–3 %), currents and voltage (within 0.5 %), flux linkages and inductances (within 1–7 %, apart from the very small ψd at OP1), power factor (within 2 %), DC copper and mechanical loss (exact), and efficiency (within 0.9 points). The parameters that genuinely differ are <b>iron loss</b> (−16 % at peak torque, +5 to +7 % in field weakening), <b>AC copper loss</b> (−8 % at low speed, +11 to +15 % at light-load high speed), <b>torque ripple</b> (−4 % at OP1, +15 % at OP2, +24 % at OP3) and, by about 1 %, <b>peak torque</b>.</div>
+</section>
+
+<section>
+  <h2><span class="n">2</span>Point-by-point tables</h2>
+  <p class="muted">Green: within 3 % (or 0.5 pt efficiency). Amber: 3–10 %. Red: over 10 %. "–" means not applicable.</p>
+
+  <h3>{{NAME1}}</h3>
+  <div class="split">
+    <div class="tbl"><table><tr><th>Quantity</th><th></th><th>Motor-CAD</th><th>FEMM same n, T</th><th>Δ</th><th>FEMM same I</th><th>Δ</th></tr>{{ROWS1}}</table></div>
+    <figure><img src="{{IMG_OP1}}" alt="OP1 loss comparison"><figcaption>Loss breakdown, OP1.</figcaption></figure>
+  </div>
+
+  <h3>{{NAME2}}</h3>
+  <div class="split">
+    <div class="tbl"><table><tr><th>Quantity</th><th></th><th>Motor-CAD</th><th>FEMM same n, T</th><th>Δ</th><th>FEMM same I</th><th>Δ</th></tr>{{ROWS2}}</table></div>
+    <figure><img src="{{IMG_OP2}}" alt="OP2 loss comparison"><figcaption>Loss breakdown, OP2.</figcaption></figure>
+  </div>
+
+  <h3>{{NAME3}}</h3>
+  <div class="split">
+    <div class="tbl"><table><tr><th>Quantity</th><th></th><th>Motor-CAD</th><th>FEMM same n, T</th><th>Δ</th><th>FEMM same I</th><th>Δ</th></tr>{{ROWS3}}</table></div>
+    <figure><img src="{{IMG_OP3}}" alt="OP3 loss comparison"><figcaption>Loss breakdown, OP3. The "same n, T" column is FEMM's maximum torque at 360 A (44.3 N·m), because 44.9 N·m needs 361.7 A.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2><span class="n">3</span>Torque ripple</h2>
+  <p>FEMM ripple at Motor-CAD's exact currents (24 rotor positions over the 12° mech on-load ripple period): OP1 {{RIP_OP1}} against Motor-CAD 2.56 N·m (17.7 %); OP2 {{RIP_OP2}} against 3.04 N·m (83 %); OP3 {{RIP_OP3}} against 1.91 N·m (4.2 %).</p>
+  {{RIPPLE_FIG}}
+</section>
+
+<section>
+  <h2><span class="n">4</span>Deep analysis: what differs and why</h2>
+  <div class="card"><h3>A. Torque and flux linkage, the electromagnetic core: consistent</h3>
+    <ul>
+      <li>At identical currents, EM torque differs by −0.7 % (OP1), −2.0 % (OP2) and −1.1 % (OP3). Magnet torque differs by under 1 %. Reluctance torque differs by −3 to −11 %, but it is small (0.5–6 N·m), so the absolute difference is at most 0.24 N·m.</li>
+      <li>ψq agrees within 0.6–5 %, and the magnet flux linkage within 0.3–0.7 %. Ld agrees within 0.5–2 % and Lq within 2.4–7 % (OP2 has the largest gap: there the q-axis iron is least saturated, so the B-H curve at low field and the bridge geometry matter most).</li>
+      <li><b>ψd at OP1 (+10 % / −13 %)</b> is a sensitivity effect, not a model error. In deep field weakening ψd = ψm + Ld·id = 20.5 − 17.5 ≈ 3 mVs is the small difference of two large terms, so 1 % on ψm or Ld becomes about 10 % on ψd. The voltage it produces is within 0.3 % (same operating point).</li>
+      <li><b>Peak torque −1.2 % (OP3).</b> FEMM gives 44.3 N·m at 360 A where Motor-CAD gives 44.9 N·m at 361.7 A. At the same 361.7 A, FEMM gives 44.5 N·m (−1.0 %). The rest comes from 2D field differences in the saturated pole neck and the 6 × 6 d-q map, which is coarser than Motor-CAD's 30-point model. FEMM's MTPA angle is 23.2° against 20.8°: the torque-angle curve is flat near its peak, and the reluctance part, slightly lower in FEMM, shifts the optimum.</li>
+    </ul></div>
+  <div class="card"><h3>B. Operating-point selection: small current differences</h3>
+    <ul>
+      <li>At OP1 (maximum current at 9000 rpm), both tools hit the 280 A DC limit, but FEMM gets there with 135 A against 139.7 A phase current. FEMM's high-speed losses are slightly different, so it solves a slightly different point of equal torque (14.03 against 14.02 N·m). This changes the split between DC copper (−6 %) and AC copper and iron, but total loss agrees within 0.5 %.</li>
+      <li>At OP2 both use the full 49.4 V (0.3 % apart) and almost the same current (−1.8 %) and angle (−0.4°).</li>
+    </ul></div>
+  <div class="card"><h3>C. Iron loss: load dependence differs</h3>
+    <ul>
+      <li>OP3 (2000 rpm, peak torque): FEMM −16 % (91 W against 108 W). OP1 and OP2 (field weakening above 9000 rpm): FEMM +5 to +7 %.</li>
+      <li>FEMM's iron loss rises less with q-axis load and more with field weakening than Motor-CAD's. The likely reasons:
+        <ol>
+          <li>Motor-CAD's exact iron-loss option (harmonics, minor loops with Kc 0.65) is not visible from the exports. FEMM uses peak-B in the stator and per-harmonic in the rotor, and on-load armature-reaction harmonics would add more loss with that option.</li>
+          <li>FEMM's iron-loss map has 4 × 3 current points; peak torque lies at the edge of that grid, where the interpolation is least certain.</li>
+        </ol></li>
+      <li>Effect on efficiency: −17 W at OP3 is +0.17 pt; +16 W at OP2 is −0.4 pt.</li>
+    </ul></div>
+  <div class="card"><h3>D. AC copper loss: frequency trend differs</h3>
+    <ul>
+      <li>FEMM −8 % at 2000 rpm (OP3), +0.4 % at 9000 rpm maximum current (OP1), +11 to +15 % at 9339 rpm light load (OP2).</li>
+      <li>FEMM uses the low-frequency round-wire formula with the average slot field (B̂² over the whole coil area) × 2. Motor-CAD's hybrid method uses the field at each conductor position and includes the skin-depth limit. At 778 Hz the wire is about 1.2 skin depths across, so the low-frequency formula starts to overstate, which fits OP2 being high. At low speed, Motor-CAD's position-resolved field near the slot opening is stronger than FEMM's average, which fits OP3 being low.</li>
+    </ul></div>
+  <div class="card"><h3>E. Torque ripple: matches at high speed, higher in FEMM at peak torque</h3>
+    <ul>
+      <li>Direct FEMM solves at Motor-CAD's currents give these ripples: OP1 2.47 N·m against 2.56 N·m (−4 %); OP2 3.49 N·m against 3.04 N·m (+15 %); OP3 2.36 N·m against 1.91 N·m (+24 %).</li>
+      <li>The direct solves also give the mean EM torque without d-q map interpolation: OP1 14.41 N·m against 14.51 N·m (−0.7 %), OP2 3.66 N·m against 3.65 N·m (+0.1 %), OP3 45.16 N·m against 45.52 N·m (−0.8 %). Torque agrees within 1 %.</li>
+      <li>The ripple pattern follows cogging. FEMM's cogging is about 30 % above Motor-CAD's (0.86 against 0.66 N·m) and mesh-converged in FEMM. Cogging is a large share of the ripple at OP3 (low speed, strongly saturated teeth) and at OP2 (small mean torque), and a small share at OP1. The most likely cause is the same as for cogging: Motor-CAD's coarser sampling of torque against rotor position (points per cycle), which rounds off peaks. FEMM uses 0.5° mech steps, which is 144 points per electrical cycle.</li>
+    </ul></div>
+  <div class="card"><h3>F. Exactly equal by construction</h3>
+    <p>DC copper (R = 6.673 mΩ per phase at 100 °C), windage, friction (bearings) and magnet loss (0, ferrite) use Motor-CAD's own inputs, so they agree exactly at the same current and speed.</p></div>
+</section>
+
+<section>
+  <h2><span class="n">5</span>What would close the remaining gaps</h2>
+  <div class="tbl"><table>
+    <tr><th>Gap</th><th>Action in FEMM</th><th>What would help from Motor-CAD</th></tr>
+    <tr><td class="txt">Iron loss at high load (−16 %)</td><td class="txt">add on-load points to the iron-loss grid near MTPA (2 more solve sets, about 1 h); try harmonic stator loss with the Kc minor-loop factor</td><td class="txt">Iron-loss settings (method, minor loops, points per cycle) and the OP3 loss split: stator tooth / back iron / rotor, hysteresis / eddy (Output Data › Losses)</td></tr>
+    <tr><td class="txt">AC copper ±8–15 %</td><td class="txt">model each conductor at its slot position and use the skin-effect-limited formula</td><td class="txt">Conductor layout (Winding › Pattern graphic) and the AC-loss settings (hybrid adjustment, cuboids)</td></tr>
+    <tr><td class="txt">Peak torque −1 %</td><td class="txt">densify the d-q map around MTPA (9 points, about 30 min)</td><td class="txt">Lab saturation-model ψd, ψq table (id, iq) for a direct comparison</td></tr>
+    <tr><td class="txt">Torque ripple</td><td class="txt">finer rotor steps; air-gap mesh study (section 3)</td><td class="txt">Motor-CAD torque-ripple waveform data (E-Magnetics › Graphs › Data) and the points per cycle used</td></tr>
+  </table></div>
+  <p class="muted">Data: <code>op_compare.json</code>, <code>op_ripple.json</code>. Scripts: <code>op_compare.py</code>, <code>op_ripple.py</code>, <code>build_op_report.py</code>, all in <code>E:\TVSM\Motor Design\FEM\Spoke_V2_backemf\</code>.</p>
+</section>
+</div>

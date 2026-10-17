@@ -1,0 +1,106 @@
+<title>Spoke V2 Aluminium Winding Study</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: engineering datasheet. Fixed contents rail on the left, one report page at a time on the right; rail becomes a scrolling tab strip on phones. */
+:root {
+  --paper: #f5f6f7; --sheet: #ffffff; --ink: #18202b; --ink-2: #4d5866; --rule: #d8dde3; --rule-2: #eceff2;
+  --copper: #a8592a; --alu: #4f6b86; --alu-tint: #e7edf3; --good: #1d7a4c; --warn: #9a6400;
+  --f-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Roboto, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --paper: #12161c; --sheet: #1a2028; --ink: #e6e9ed; --ink-2: #a6b0bc; --rule: #313a46; --rule-2: #252c36;
+  --copper: #d98a57; --alu: #8fb0cf; --alu-tint: #222d3a; --good: #5cc28d; --warn: #e0a83a; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --paper: #12161c; --sheet: #1a2028; --ink: #e6e9ed; --ink-2: #a6b0bc; --rule: #313a46; --rule-2: #252c36;
+  --copper: #d98a57; --alu: #8fb0cf; --alu-tint: #222d3a; --good: #5cc28d; --warn: #e0a83a; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--paper); color: var(--ink); font: 15px/1.6 var(--f-body); margin: 0 }
+.shell { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 0; max-width: 1480px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px }
+.rail { position: sticky; top: env(safe-area-inset-top, 0px); align-self: start; padding-block: 28px; padding-right: 20px; max-height: 100vh; overflow-y: auto }
+.brand { font: 600 13px/1.3 var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-2); margin: 0 0 6px }
+.title { font: 700 30px/1.02 var(--f-display); letter-spacing: .01em; margin: 0 0 22px; text-wrap: balance }
+.title span { color: var(--alu) }
+.rail nav { display: flex; flex-direction: column; gap: 2px; border-left: 2px solid var(--rule) }
+.rail nav a { color: var(--ink-2); text-decoration: none; padding: 6px 0 6px 14px; margin-left: -2px; border-left: 2px solid transparent; font-size: 14px }
+.rail nav a:hover { color: var(--ink) }
+.rail nav a[aria-current="page"] { color: var(--ink); border-left-color: var(--copper); font-weight: 600 }
+.rail nav a:focus-visible { outline: 2px solid var(--alu); outline-offset: 2px }
+.meta { margin-top: 22px; font: 12px/1.5 var(--f-mono); color: var(--ink-2) }
+main { min-width: 0; padding-block: 28px }
+.page { background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 28px clamp(16px, 3vw, 40px) 36px; margin-bottom: 28px; min-width: 0 }
+.js .page { display: none } .js .page.on { display: block }
+.ph { border-bottom: 1px solid var(--rule); padding-bottom: 14px; margin-bottom: 20px }
+.eyebrow { font: 500 12px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--copper); margin: 0 0 4px }
+h2 { font: 700 40px/1.05 var(--f-display); margin: 0; text-wrap: balance }
+h3 { font: 600 24px/1.15 var(--f-display); margin: 30px 0 10px; text-wrap: balance; letter-spacing: .01em }
+h4 { font: 600 13px var(--f-mono); letter-spacing: .05em; text-transform: uppercase; margin: 0 0 8px; color: var(--ink-2) }
+p, li { max-width: 78ch }
+.lede { font-size: 17px; line-height: 1.55; color: var(--ink) }
+ul { padding-left: 1.2em } li { margin: 4px 0 }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 18px 0 8px }
+.card { border: 1px solid var(--rule); border-radius: 6px; padding: 16px 18px; min-width: 0; background: var(--sheet) }
+.card.hi { border-color: var(--alu); background: var(--alu-tint) }
+.card p { margin: 0; font-size: 14px }
+.card .big { font: 700 34px/1.1 var(--f-display); margin: 0 0 6px; font-variant-numeric: tabular-nums }
+.tw { overflow-x: auto; margin: 14px 0 4px; border: 1px solid var(--rule); border-radius: 4px }
+table { border-collapse: collapse; width: 100%; font-size: 13px }
+th { font: 500 11.5px/1.3 var(--f-mono); letter-spacing: .02em; text-align: left; color: var(--ink-2); background: var(--rule-2); padding: 8px 10px; vertical-align: bottom; border-bottom: 1px solid var(--rule) }
+td { padding: 6px 10px; border-bottom: 1px solid var(--rule-2); vertical-align: top }
+tbody tr:last-child td { border-bottom: 0 }
+table.num td { font-family: var(--f-mono); font-size: 12.5px; font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap }
+table.num td:first-child { text-align: left; font-family: var(--f-body); font-weight: 500; white-space: normal; min-width: 150px }
+table.num th:not(:first-child) { text-align: right }
+table.sheet { max-width: 640px } table.sheet td:last-child { font-family: var(--f-mono); font-size: 12.5px }
+.tw:has(table.sheet) { max-width: 642px; display: inline-block; vertical-align: top; margin-right: 14px }
+.tnote { font-size: 12.5px; color: var(--ink-2); margin: 4px 0 16px }
+figure { margin: 18px 0; min-width: 0 }
+figure img { display: block; max-width: 100%; height: auto; background: #ffffff; border: 1px solid var(--rule); border-radius: 4px; padding: 6px }
+figcaption { font-size: 13px; color: var(--ink-2); margin-top: 6px; max-width: 90ch }
+.pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px }
+@media (max-width: 860px) {
+  .shell { grid-template-columns: minmax(0, 1fr) }
+  .rail { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); padding: 12px 0 8px; max-height: none; border-bottom: 1px solid var(--rule) }
+  body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--paper) }
+  .title { font-size: 22px; margin-bottom: 8px } .brand, .meta { display: none }
+  .rail nav { flex-direction: row; overflow-x: auto; border-left: 0; border-bottom: 0; gap: 4px; padding-bottom: 4px }
+  .rail nav a { white-space: nowrap; border-left: 0; border-bottom: 2px solid transparent; padding: 4px 8px; margin: 0 }
+  .rail nav a[aria-current="page"] { border-bottom-color: var(--copper) }
+  h2 { font-size: 32px }
+}
+@media (prefers-reduced-motion: no-preference) { .page.on { animation: in .18s ease-out } @keyframes in { from { opacity: .4 } to { opacity: 1 } } }
+</style>
+<div class="shell">
+  <aside class="rail">
+    <p class="brand">12-slot / 10-pole ferrite spoke</p>
+    <h1 class="title">Spoke V2 <span>aluminium</span> winding study</h1>
+    <nav aria-label="Report pages">{{NAV}}</nav>
+    <p class="meta">FEMM 4.2 · tuned motor model<br>Vehicle: 757 kg, ratio 13.9<br>16 Oct 2026</p>
+  </aside>
+  <main>{{PAGES}}</main>
+</div>
+<script>
+(function () {
+  var pages = Array.prototype.slice.call(document.querySelectorAll('.page'));
+  var links = Array.prototype.slice.call(document.querySelectorAll('.rail nav a'));
+  if (!pages.length) return;
+  document.documentElement.classList.add('js');
+  function show(id, scroll) {
+    if (!document.getElementById(id)) id = pages[0].id;
+    pages.forEach(function (p) { p.classList.toggle('on', p.id === id); });
+    links.forEach(function (a) { if (a.dataset.p === id) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+    var cur = links.filter(function (a) { return a.dataset.p === id; })[0];
+    if (cur && cur.scrollIntoView && window.innerWidth <= 860) cur.scrollIntoView({ block: 'nearest', inline: 'center' });
+    if (scroll) window.scrollTo(0, 0);
+  }
+  links.forEach(function (a) {
+    a.addEventListener('click', function (e) { e.preventDefault(); show(a.dataset.p, true); try { history.replaceState(null, '', '#' + a.dataset.p); } catch (x) {} });
+  });
+  window.addEventListener('hashchange', function () { show(location.hash.slice(1), true); });
+  show(location.hash.slice(1), false);
+})();
+</script>
