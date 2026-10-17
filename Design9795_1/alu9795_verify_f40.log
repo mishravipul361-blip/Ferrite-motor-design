@@ -1,0 +1,11 @@
+40 solves
+K6  -22.0  132.3 dpsiq femm -0.00129 interp -0.00132 (of 0.0269) | rSa femm 1.245 interp 1.244 | T 41.29 -> 38.71
+K6  -44.1   88.2 dpsiq femm -0.00060 interp -0.00063 (of 0.0206) | rSa femm 1.294 interp 1.286 | T 30.41 -> 29.29
+K6  -14.7   44.1 dpsiq femm -0.00037 interp -0.00042 (of 0.0121) | rSa femm 1.332 interp 1.315 | T 14.37 -> 14.10
+K6  -73.5   58.8 dpsiq femm -0.00026 interp -0.00027 (of 0.0137) | rSa femm 1.264 interp 1.268 | T 20.50 -> 19.80
+K6 -102.9  102.9 dpsiq femm -0.00048 interp -0.00048 (of 0.0222) | rSa femm 1.305 interp 1.311 | T 36.81 -> 35.02
+K2  -22.0  132.3 dpsiq femm +0.00021 interp +0.00019 (of 0.0269) | rSa femm 1.249 interp 1.251 | T 41.29 -> 40.23
+K2  -44.1   88.2 dpsiq femm +0.00046 interp +0.00042 (of 0.0206) | rSa femm 1.272 interp 1.263 | T 30.41 -> 30.17
+K2  -14.7   44.1 dpsiq femm +0.00029 interp +0.00025 (of 0.0121) | rSa femm 1.254 interp 1.247 | T 14.37 -> 14.34
+K2  -73.5   58.8 dpsiq femm +0.00040 interp +0.00037 (of 0.0137) | rSa femm 1.238 interp 1.233 | T 20.50 -> 20.45
+K2 -102.9  102.9 dpsiq femm +0.00056 interp +0.00055 (of 0.0222) | rSa femm 1.301 interp 1.301 | T 36.81 -> 36.49
