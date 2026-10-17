@@ -1,0 +1,86 @@
+D0 od 160 depth 17.65 tooth 15.54 yoke 8.85 slot 281.2 mm2 (x1.000) stator 3.635 kg
+A1 od 160 depth 18.65 tooth 15.54 yoke 7.85 slot 303.1 mm2 (x1.078) stator 3.510 kg
+A2 od 160 depth 19.65 tooth 15.54 yoke 6.85 slot 325.5 mm2 (x1.157) stator 3.382 kg
+A3 od 160 depth 17.65 tooth 14.54 yoke 8.85 slot 296.2 mm2 (x1.053) stator 3.550 kg
+A4 od 160 depth 18.65 tooth 14.54 yoke 7.85 slot 319.0 mm2 (x1.135) stator 3.419 kg
+A5 od 160 depth 19.65 tooth 14.54 yoke 6.85 slot 342.5 mm2 (x1.218) stator 3.285 kg
+A6 od 160 depth 18.65 tooth 13.54 yoke 7.85 slot 334.7 mm2 (x1.190) stator 3.330 kg
+G1 od 163 depth 19.15 tooth 15.54 yoke 8.85 slot 314.3 mm2 (x1.118) stator 3.808 kg
+G2 od 163 depth 20.15 tooth 15.54 yoke 7.85 slot 336.9 mm2 (x1.198) stator 3.679 kg
+G3 od 163 depth 20.15 tooth 14.54 yoke 7.85 slot 354.4 mm2 (x1.260) stator 3.579 kg
+B1 od 165 depth 20.15 tooth 15.54 yoke 8.85 slot 336.9 mm2 (x1.198) stator 3.923 kg
+B2 od 165 depth 21.15 tooth 15.54 yoke 7.85 slot 360.1 mm2 (x1.281) stator 3.791 kg
+B3 od 165 depth 21.15 tooth 14.54 yoke 7.85 slot 378.6 mm2 (x1.346) stator 3.685 kg
+F1 od 167 depth 21.15 tooth 15.54 yoke 8.85 slot 360.2 mm2 (x1.281) stator 4.038 kg
+F2 od 167 depth 22.15 tooth 15.54 yoke 7.85 slot 383.8 mm2 (x1.365) stator 3.903 kg
+F3 od 167 depth 22.15 tooth 14.54 yoke 7.85 slot 403.3 mm2 (x1.434) stator 3.792 kg
+F4 od 167 depth 23.15 tooth 14.54 yoke 6.85 slot 428.6 mm2 (x1.524) stator 3.647 kg
+jobs to run 538
+07:18:13 8/538 D0 T 0.01 tooth 1.91 yoke 0.19 T
+07:21:37 16/538 D0 T 18.20 tooth 2.00 yoke 1.06 T
+07:21:37 24/538 D0 T 16.06 tooth 1.97 yoke 1.30 T
+07:21:37 32/538 A1 T 35.78 tooth 2.19 yoke 1.43 T
+07:21:37 40/538 A1 T 35.42 tooth 2.16 yoke 1.37 T
+07:21:37 48/538 A1 T 34.95 tooth 2.14 yoke 1.61 T
+07:33:50 56/538 A1 T 31.19 tooth 2.12 yoke 1.71 T
+07:34:52 64/538 A2 T 35.16 tooth 2.18 yoke 1.56 T
+07:35:52 72/538 A2 T 35.12 tooth 2.15 yoke 1.51 T
+07:36:22 80/538 A2 T 34.43 tooth 2.14 yoke 1.73 T
+07:36:32 88/538 A2 T 30.50 tooth 2.11 yoke 1.79 T
+07:38:55 96/538 A3 T 34.70 tooth 2.19 yoke 1.26 T
+07:50:35 104/538 A3 T 34.64 tooth 2.14 yoke 1.25 T
+07:54:19 112/538 A3 T 34.67 tooth 2.12 yoke 1.44 T
+07:54:19 120/538 A3 T 31.08 tooth 2.11 yoke 1.54 T
+07:54:19 128/538 A4 T 34.68 tooth 2.19 yoke 1.38 T
+07:54:19 136/538 A4 T 34.67 tooth 2.15 yoke 1.35 T
+07:57:45 144/538 A4 T 34.50 tooth 2.13 yoke 1.58 T
+08:06:17 152/538 A4 T 30.85 tooth 2.11 yoke 1.69 T
+08:08:18 160/538 A5 T 34.32 tooth 2.18 yoke 1.54 T
+08:09:42 168/538 A5 T 34.48 tooth 2.15 yoke 1.49 T
+08:10:13 176/538 A5 T 34.08 tooth 2.12 yoke 1.71 T
+08:10:54 184/538 A5 T 30.26 tooth 2.11 yoke 1.78 T
+08:14:43 192/538 A6 T 33.70 tooth 2.20 yoke 1.35 T
+08:23:40 200/538 A6 T 33.90 tooth 2.15 yoke 1.33 T
+08:28:56 208/538 A6 T 33.90 tooth 2.11 yoke 1.55 T
+08:28:56 216/538 A6 T 30.38 tooth 2.10 yoke 1.67 T
+08:28:56 224/538 G1 T 35.73 tooth 2.20 yoke 1.28 T
+08:29:51 232/538 G1 T 35.45 tooth 2.15 yoke 1.27 T
+08:32:54 240/538 G1 T 35.14 tooth 2.14 yoke 1.48 T
+08:40:06 248/538 G1 T 31.39 tooth 2.12 yoke 1.60 T
+08:43:14 256/538 G2 T 35.61 tooth 2.20 yoke 1.42 T
+08:43:52 264/538 G2 T 35.39 tooth 2.15 yoke 1.38 T
+08:47:05 272/538 G2 T 34.90 tooth 2.14 yoke 1.62 T
+08:47:05 280/538 G2 T 31.10 tooth 2.11 yoke 1.72 T
+08:49:43 288/538 G3 T 34.62 tooth 2.19 yoke 1.39 T
+08:57:40 296/538 G3 T 34.64 tooth 2.15 yoke 1.35 T
+09:02:15 304/538 G3 T 34.45 tooth 2.12 yoke 1.58 T
+09:02:15 312/538 G3 T 30.78 tooth 2.11 yoke 1.69 T
+09:04:29 320/538 B1 T 35.72 tooth 2.20 yoke 1.30 T
+09:05:45 328/538 B1 T 35.45 tooth 2.15 yoke 1.26 T
+09:07:43 336/538 B1 T 35.16 tooth 2.14 yoke 1.48 T
+09:15:32 344/538 B1 T 31.38 tooth 2.11 yoke 1.59 T
+09:19:14 352/538 B2 T 35.58 tooth 2.20 yoke 1.43 T
+09:19:14 360/538 B2 T 35.40 tooth 2.15 yoke 1.38 T
+09:23:37 368/538 B2 T 34.93 tooth 2.14 yoke 1.62 T
+09:23:37 376/538 B2 T 31.12 tooth 2.11 yoke 1.71 T
+09:24:54 384/538 B3 T 34.59 tooth 2.19 yoke 1.40 T
+09:33:25 392/538 B3 T 34.63 tooth 2.15 yoke 1.35 T
+09:37:16 400/538 B3 T 34.41 tooth 2.12 yoke 1.58 T
+09:37:16 408/538 B3 T 30.73 tooth 2.11 yoke 1.68 T
+09:39:20 416/538 F1 T 35.70 tooth 2.20 yoke 1.31 T
+09:40:25 424/538 F1 T 35.44 tooth 2.15 yoke 1.27 T
+09:41:59 432/538 F1 T 35.14 tooth 2.14 yoke 1.48 T
+09:49:29 440/538 F1 T 31.35 tooth 2.11 yoke 1.59 T
+09:54:51 448/538 F2 T 35.56 tooth 2.20 yoke 1.45 T
+09:54:51 456/538 F2 T 35.39 tooth 2.15 yoke 1.38 T
+09:56:05 464/538 F2 T 34.90 tooth 2.14 yoke 1.62 T
+09:56:17 472/538 F2 T 31.08 tooth 2.11 yoke 1.72 T
+09:58:07 480/538 F3 T 34.56 tooth 2.20 yoke 1.41 T
+10:06:39 488/538 F3 T 34.62 tooth 2.15 yoke 1.35 T
+10:12:49 496/538 F3 T 34.38 tooth 2.12 yoke 1.58 T
+10:12:49 504/538 F3 T 30.69 tooth 2.10 yoke 1.69 T
+10:12:49 512/538 F4 T 34.12 tooth 2.18 yoke 1.57 T
+10:13:05 520/538 F4 T 34.40 tooth 2.15 yoke 1.49 T
+10:16:20 528/538 F4 T 33.95 tooth 2.12 yoke 1.70 T
+10:17:45 536/538 F4 T 30.09 tooth 2.11 yoke 1.77 T
+ALL DONE in 206 min
