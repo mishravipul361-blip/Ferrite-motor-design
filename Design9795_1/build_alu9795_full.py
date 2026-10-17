@@ -20,9 +20,11 @@ import alu9795_ops as O
 import backemf as M
 
 H = S.H
-OUT = os.path.join(H, 'report_alu')
-R = json.load(open(os.path.join(H, 'alu9795_search.json')))
-PK = json.load(open(os.path.join(H, 'alu9795_picks.json')))
+TAG = os.environ.get('TAG', '')                     # e.g. '_ew1136' for the run with end-winding MLT multiplier 1.136
+EWM = S.EW_MULT
+OUT = os.path.join(H, 'report_alu' + TAG)
+R = json.load(open(os.path.join(H, 'alu9795_search%s.json' % TAG)))
+PK = json.load(open(os.path.join(H, 'alu9795_picks%s.json' % TAG)))
 FM = json.load(open(os.path.join(H, 'alu9795_femm.json')))
 VF = json.load(open(os.path.join(H, 'alu9795_verify.json')))
 MC = json.load(open(os.path.join(H, 'lab_compare_9795.json')))['mcad_envelope']
@@ -32,7 +34,19 @@ CUL = 'Copper (Design9795_1)'
 BY[CUL] = CU
 TEL, WM = 'Telematics', 'WMTC Class 1'
 ODS = (160, 163, 165, 167)
-REC, ALT, MINR, DROP = 'Al F2 L66 N10 4x1.70', 'Al F2 L72 N9 5x1.60', 'Al F1 L78 N8 6x1.50', 'Al drop-in (SWG 11 size, 64 mm)'
+DROP = 'Al drop-in (SWG 11 size, 64 mm)'
+_pa = PK['picks']['full|all']
+MINR = _pa['best_range']['label']
+REC = (_pa.get('cheapest_within_1.5') or _pa.get('cheapest_within_2.0') or _pa['cheapest'])['label']   # largest saving within 1.5 % (else 2 %) range loss, full torque
+_fr = sorted(PK['fronts']['full|all|370'], key=lambda d: -d['range'])
+_sv = {d['label']: -d['dcost'] for d in _fr}
+_half = (_sv[REC] + _sv[MINR]) / 2                   # alternative: least winding heat among front designs saving at least halfway from MINR to REC
+_mid = [d for d in _fr if d['label'] not in (REC, MINR) and -d['dcost'] >= _half and -d['dcost'] <= _sv[REC]]
+ALT = (min(_mid, key=lambda d: d['pwdg']) if _mid else _fr[len(_fr) // 2])['label']
+_rr = [x for x in _fr if x['label'] == REC][0]
+_dom = [d for d in PK['fronts']['relaxed|all|370'] if d['env'] >= 0.985 and d['label'] != REC and d['range'] >= _rr['range'] and -d['dcost'] >= -_rr['dcost']]
+if _dom:                                             # a design just under the 99 % envelope rule that beats the recommended one on cost and range
+    ALT = max(_dom, key=lambda d: d['range'])['label']
 SVS = {160: ['D0', 'A1', 'A2', 'A3', 'A4', 'A5', 'A6'], 163: ['G1', 'G2', 'G3'], 165: ['B1', 'B2', 'B3'], 167: ['F1', 'F2', 'F3', 'F4']}
 CCU = '#b45309'
 PAL = ['#2563eb', '#059669', '#7c3aed', '#0891b2', '#dc2626']
@@ -43,17 +57,32 @@ plt.rcParams.update({'font.size': 9.5, 'axes.grid': True, 'grid.alpha': .25, 'fi
 
 # ---------------- key designs per OD ----------------
 def keys_for(od):
-    pf, pr = PK['picks']['full|%d' % od], PK['picks']['relaxed|%d' % od]
-    if od == 167:
-        ks = [('Least range loss', MINR), ('Cooler alternative', ALT), ('Recommended', REC)]
-    else:
-        ks = [('Least range loss', pf['best_range']['label']), ('Largest saving, full torque', pf['cheapest']['label'])]
-        rl = (pr.get('cheapest_within_1.5') or pr.get('cheapest_within_2.0') or pr['cheapest'])['label']
+    pf, pr = PK['picks'].get('full|%d' % od, {}), PK['picks'].get('relaxed|%d' % od, {})
+    ks = [('Least range loss', pf['best_range']['label']), ('Largest saving, full torque', pf['cheapest']['label'])] if pf else []
+    if pr:
+        if not pf:
+            ks.append(('Least range loss, ≤ 3 % high-speed torque', pr['best_range']['label']))
+        kk = next(k for k in ('cheapest_within_1.5', 'cheapest_within_2.0', 'cheapest') if k in pr)
+        rl = pr[kk]['label']
         if rl not in [k for _, k in ks]:
-            ks.append(('Largest saving, ≤ 3 % high-speed torque', rl))
-    return ks
+            ks.append(('Largest saving%s, ≤ 3 %% high-speed torque' % ({'cheapest': ''}.get(kk, ' within %s %% range' % kk[-3:])), rl))
+    for role, lab in (('Least range loss', MINR), (ALT_NAME, ALT), ('Recommended', REC)):
+        if round(BY[lab]['geo']['od']) != od:
+            continue
+        ks = [(r, l) for r, l in ks if l != lab]
+        ks.append((role, lab))
+    seen, out = set(), []
+    for r, l in reversed(ks):                        # drop near-duplicates (same stator, stack and turns), keeping the named roles
+        key = (BY[l]['sv'], BY[l]['L'], BY[l]['Nc'])
+        if key not in seen:
+            seen.add(key); out.append((r, l))
+        else:
+            j = next(i for i, (_, l2) in enumerate(out) if (BY[l2]['sv'], BY[l2]['L'], BY[l2]['Nc']) == key)
+            out[j] = (out[j][0] + ' / ' + r.lower(), out[j][1])
+    return sorted(out[:4], key=lambda x: -BY[x[1]]['range_pct'][TEL])
 
 
+ALT_NAME = ('Alternative, %.1f %% torque at high speed' % (100 * BY[ALT]['env_ratio_min'])) if BY[ALT]['env_ratio_min'] < 0.99 else     ('Cooler alternative' if (BY[ALT]['peak']['pcu'] + BY[ALT]['peak']['pac']) < (BY[REC]['peak']['pcu'] + BY[REC]['peak']['pac']) else 'Alternative')
 KEYS = {od: keys_for(od) for od in ODS}
 ALLKEYS = [CUL] + sorted({l for od in ODS for _, l in KEYS[od]} | {DROP}, key=lambda l: (BY[l]['geo']['od'], l))
 
@@ -180,7 +209,7 @@ def f_stack(od):
     fig, ax = plt.subplots(1, 3, figsize=(12.5, 3.6))
     for Nc, ls in ((8, ':'), (9, '--'), (10, '-')):
         rows = []
-        for Lm in SE.LS:
+        for Lm in sorted({d['L'] for d in DS}):
             ds = [d for d in DS if round(d['geo']['od']) == od and d['Nc'] == Nc and d['L'] == Lm and d['sv'] in SVS[od] and A.ok(d, 'relaxed')]
             if ds:
                 rows.append(max(ds, key=rng))
@@ -421,8 +450,22 @@ def cost_table(labs):
 # ---------------- pages ----------------
 P = {}
 rec, alt, mn, dr = BY[REC], BY[ALT], BY[MINR], BY[DROP]
+CUEW = dr['mlt'] / CU['mlt']                          # aluminium / copper mean turn at the same slot and stack
+EW_NOTE = ('' if abs(EWM - 0.7) < 1e-9 else
+           '<div class="card hi" style="margin:0 0 16px"><h4>Aluminium end-winding multiplier %.3f</h4><p>The copper reference is Design9795_1 as given, with Motor-CAD\'s armature end-winding MLT multiplier 0.7 (mean turn %.1f mm, %.2f mΩ per path, %.2f mΩ phase, %.2f mΩ line to line at 100 °C). Every aluminium winding uses a multiplier of %.3f: the end-winding part of each aluminium turn is %.3f × longer than at 0.7. The copper-size drop-in, for example, goes from 203.6 to %.1f mm mean turn and %.2f mΩ per path. Everything else (fields, iron loss, prices, vehicle, criteria) is as in the 0.7 study.</p></div>'
+           % (EWM, CU['mlt'] * 1e3, CU['R_path'] * 1e3, CU['R_path'] * 1e3 / 2, CU['R_path'] * 1e3 / 3, EWM, EWM / 0.7, dr['mlt'] * 1e3, dr['R_path'] * 1e3))
 pct = lambda d: 100 * saving(d) / CU['cost']['total']
-K3 = [('Least range loss', MINR), ('Cooler alternative', ALT), ('Recommended', REC)]
+K3 = [('Least range loss', MINR), (ALT_NAME, ALT), ('Recommended', REC)]
+
+
+def desc(d):
+    g = d['geo']
+    return 'Stator %s (OD %.0f, yoke %.2f mm, slot %.2f mm deep, tooth %.2f mm), %.0f mm stack, %d turns × %d × %.2f mm Al' % (
+        d['sv'], g['od'], g['yoke'], g['slot_depth'], g['tooth_w'], d['L'], d['Nc'], d['ns'], d['d'])
+
+
+_er = [a / b if a and b else np.nan for a, b in zip(BY[DROP]['env_T'], CU['env_T'])]
+DROP_TXT = 'drop-in (%.0f %% torque short\nat %.0f rpm)' % (100 * (1 - np.nanmin(_er)), SE.SP_MAP[int(np.nanargmin(_er))])
 
 # summary
 fig, ax = plt.subplots(1, 2, figsize=(12.5, 4.8))
@@ -439,32 +482,36 @@ for k, c in enumerate(('full', 'relaxed')):
         a.scatter(rng(d), saving(d), s=130, facecolor='none', edgecolor=PAL[kk], lw=2.2, zorder=5)
         a.annotate(role, (rng(d), saving(d)), xytext=(8, -12), textcoords='offset points', fontsize=8.5, color=PAL[kk])
     a.scatter(rng(dr), saving(dr), s=60, marker='x', color='#dc2626', zorder=5)
-    a.annotate('drop-in (3 % torque short\nat 3000 rpm)', (rng(dr), saving(dr)), xytext=(8, -4), textcoords='offset points', fontsize=8, color='#dc2626')
+    a.annotate(DROP_TXT, (rng(dr), saving(dr)), xytext=(8, -4), textcoords='offset points', fontsize=8, color='#dc2626')
     a.set_xlabel('Range change, telematics cycle (%)'); a.set_ylabel('Cost saving per motor (INR)'); a.legend(fontsize=8, loc='lower left')
     a.set_title(('Full performance: envelope ≥ 99 % at every speed' if c == 'full' else 'Relaxed: envelope ≥ 97 % at every speed'), fontsize=9.5, loc='left')
 F_PARETO = png(fig)
 od_sum = []
 for o in ODS:
-    pf = PK['picks']['full|%d' % o]
+    pf = PK['picks'].get('full|%d' % o)
+    if not pf:
+        od_sum.append(['OD %d' % o, 'no design keeps full torque (stack up to %.0f mm)' % max(d['L'] for d in DS), '–', '–', '–', '–', '–'])
+        continue
     br, ch = pf['best_range'], pf['cheapest']
     od_sum.append(['OD %d' % o, short(br['label']), f(br['range'], 2, True) + ' %', f(-br['dcost'], 0), short(ch['label']), f(ch['range'], 2, True) + ' %', f(-ch['dcost'], 0)])
 P['summary'] = ('Summary', f'''
+{EW_NOTE}
 <p class="lede">Aluminium can replace the copper winding of Design9795_1 with stator-only changes (rotor cross-section, magnets, air gap and M235-35A kept), but not at equal efficiency within the 167 mm OD limit. The best balance saves ₹{saving(rec):.0f} per motor ({pct(rec):.0f} % of active-material cost) for {-rng(rec):.2f} % range.</p>
 <div class="cards">
- <div class="card hi"><h4>Recommended · OD 167 · 66 mm</h4><p class="big">−₹{saving(rec):.0f}</p><p>Range {rng(rec):+.2f} % (telematics), {rng(rec, WM):+.2f} % (WMTC). Stator F2 (yoke 7.85 mm, slot 22.15 mm deep), 10 turns × 4 × 1.70 mm Al. Torque within 1 % of copper at every speed, {rec['dmass']:+.2f} kg. Winding loss at peak torque +{100 * (pwdg(rec) / pwdg(CU) - 1):.0f} %.</p></div>
- <div class="card"><h4>Cooler alternative · OD 167 · 72 mm</h4><p class="big">−₹{saving(alt):.0f}</p><p>Range {rng(alt):+.2f} % / {rng(alt, WM):+.2f} %. 9 turns × 5 × 1.60 mm. Winding loss at peak +{100 * (pwdg(alt) / pwdg(CU) - 1):.0f} %, {alt['dmass']:+.2f} kg.</p></div>
- <div class="card"><h4>Least range loss · OD 167 · 78 mm</h4><p class="big">−₹{saving(mn):.0f}</p><p>Range {rng(mn):+.2f} % / {rng(mn, WM):+.2f} %. Stator F1 (copper yoke), 8 turns × 6 × 1.50 mm. Winding loss at peak {100 * (pwdg(mn) / pwdg(CU) - 1):+.0f} %, {mn['dmass']:+.2f} kg.</p></div>
+ <div class="card hi"><h4>Recommended · OD {rec['geo']['od']:.0f} · {rec['L']:.0f} mm</h4><p class="big">−₹{saving(rec):.0f}</p><p>Range {rng(rec):+.2f} % (telematics), {rng(rec, WM):+.2f} % (WMTC). {desc(rec)}. Torque within {100 * (1 - rec['env_ratio_min']):.1f} % of copper at every speed, {rec['dmass']:+.2f} kg. Winding loss at peak torque {100 * (pwdg(rec) / pwdg(CU) - 1):+.0f} %.</p></div>
+ <div class="card"><h4>{ALT_NAME} · OD {alt['geo']['od']:.0f} · {alt['L']:.0f} mm</h4><p class="big">−₹{saving(alt):.0f}</p><p>Range {rng(alt):+.2f} % / {rng(alt, WM):+.2f} %. {desc(alt)}. Winding loss at peak {100 * (pwdg(alt) / pwdg(CU) - 1):+.0f} %, {alt['dmass']:+.2f} kg.</p></div>
+ <div class="card"><h4>Least range loss · OD {mn['geo']['od']:.0f} · {mn['L']:.0f} mm</h4><p class="big">−₹{saving(mn):.0f}</p><p>Range {rng(mn):+.2f} % / {rng(mn, WM):+.2f} %. {desc(mn)}. Winding loss at peak {100 * (pwdg(mn) / pwdg(CU) - 1):+.0f} %, {mn['dmass']:+.2f} kg.</p></div>
 </div>
 <h3>Cost against range, all designs</h3>
 {fig_html(F_PARETO, 'Every aluminium design evaluated (%d), Al wire at ₹370/kg. Lines: best designs at each OD (none both cheaper and better on range). Left: torque within 1 %% of copper at every speed. Right: up to 3 %% short in the high-speed, DC-power-limited region.' % len(DS))}
 <h3>Best designs at each OD (full torque)</h3>
 {table(['OD', 'Least range loss', 'Range', 'Saving (INR)', 'Largest saving', 'Range', 'Saving (INR)'], od_sum)}
-<p>Range parity is not reached: aluminium needs 1.64 × copper's conductor area for the same resistance; the largest slot that keeps the teeth and yoke from saturating gives 1.37–1.52 ×. Each OD page has the details: stator variants, all best designs, efficiency maps, OP1–OP3, drive cycle and cost.</p>
+<p>Range parity is not reached: aluminium needs 1.64 × copper's conductor area for the same resistance{(' (about %.1f × with the longer end turns of the %.3f multiplier)' % (1.64 * CUEW, EWM)) if EWM > 0.7 + 1e-9 else ''}; the largest slot that keeps the teeth and yoke from saturating gives 1.37–1.52 ×. Each OD page has the details: stator variants, all best designs, efficiency maps, OP1–OP3, drive cycle and cost.</p>
 <h3>Key designs</h3>
 {spec_table(K3 + [('Drop-in (reference)', DROP)])}
 <h3>Operating points OP1–OP3</h3>
 {op_delta_table(K3 + [('Drop-in', DROP)])}
-<p>Aluminium is better than copper at 9000 rpm (OP1) and at the 9339 rpm cruise point (OP2): copper's single 2.95 mm wire has {OPR[CUL]['OP1']['loss']['cu_ac']:.0f} W AC loss at OP1, aluminium's 1.50–1.70 mm strands {OPR[MINR]['OP1']['loss']['cu_ac']:.0f}–{OPR[REC]['OP1']['loss']['cu_ac']:.0f} W. At peak torque (OP3) the higher DC resistance costs efficiency. Full tables on the OD 167 page.</p>
+<p>Aluminium is better than copper at 9000 rpm (OP1) and at the 9339 rpm cruise point (OP2): copper's single 2.95 mm wire has {OPR[CUL]['OP1']['loss']['cu_ac']:.0f} W AC loss at OP1, aluminium's {min(BY[l]['d'] for _, l in K3):.2f}–{max(BY[l]['d'] for _, l in K3):.2f} mm strands {min(OPR[l]['OP1']['loss']['cu_ac'] for _, l in K3):.0f}–{max(OPR[l]['OP1']['loss']['cu_ac'] for _, l in K3):.0f} W. At peak torque (OP3) the higher DC resistance costs efficiency. Full tables on the OD {rec['geo']['od']:.0f} page.</p>
 ''')
 
 # method + copper
@@ -473,14 +520,14 @@ P['method'] = ('Method and copper baseline', f'''
 {table(['Stage', 'Script', 'What it computes', 'Count'], [
  ['1. Copper model', 'lab_model.py (v3), make_lab_v2.py', 'Motor-CAD-equivalent Lab model: skew slices, Motor-CAD torque, minor-loop hysteresis + harmonic eddy iron loss', 'validated on 840 Motor-CAD map points'],
  ['2. Stator variants', 'alu9795_femm.py (FEMM)', 'Torque, d-q flux, stator iron-loss sums, slot field, tooth and yoke flux density on a 4 × 4 current grid × 2 rotor positions', '17 stators × 32 = 544 solves'],
- ['3. Design search', 'alu9795_study.py, alu9795_search.py', 'Each stator × stack 64–80 mm × 8/9/10 turns per coil × 1–6 strands: envelope, efficiency map, peak point, drive cycles, cost', '%d designs' % len(DS)],
+ ['3. Design search', 'alu9795_study.py, alu9795_search.py', 'Each stator × stack %.0f–%.0f mm' % (min(d['L'] for d in DS), max(d['L'] for d in DS)) + ' × 8/9/10 turns per coil × 1–6 strands: envelope, efficiency map, peak point, drive cycles, cost', '%d designs' % len(DS)],
  ['4. Best designs', 'alu9795_analyse.py', 'Cost against range fronts per OD and criterion; Al price sensitivity', '4 ODs × 2 criteria × 3 prices'],
  ['5. FEMM check', 'alu9795_verify.py', 'Direct solves between grid nodes, 4 rotor positions, against the interpolation', '60 solves'],
  ['6. Operating points', 'alu9795_ops.py', 'OP1–OP3: currents, phase advance, voltage, flux, power factor, loss breakdown', '%d designs' % len(ALLKEYS)],
 ], 'plain')}
 <h3>Copper baseline (Design9795_1)</h3>
 <p>Stator OD 160 mm, bore 107 mm, 12 slots, slot depth 17.65 mm, tooth 15.54 mm, yoke 8.85 mm, slot 281.2 mm²; 10-pole spoke ferrite rotor; 64 mm stack; delta, 2 parallel paths, 10 turns per coil of SWG 11 (2.946 mm) copper, fill 0.513; M235-35A. Drive: 52 V, modulation 0.95 (49.4 V phase peak), 360 A rms line, 280 A DC, MTPA. Winding and magnets at 100 °C.</p>
-<p>The FEMM model matches Motor-CAD Lab within 0.28 efficiency points (mean over 840 map points), 1.6 % torque and 2.7 % total loss; envelope torque within 0.7 % from 1000 to 9000 rpm (see the Lab validation report).</p>
+{EW_NOTE}<p>The FEMM copper model matches Motor-CAD Lab within 0.28 efficiency points (mean over 840 map points), 1.6 % torque and 2.7 % total loss; envelope torque within 0.7 % from 1000 to 9000 rpm (see the Lab validation report).</p>
 <div class="pair">{fig_html(f_map(CUL, 'Copper efficiency map (%), with OP1–OP3'), 'Copper efficiency map from the Motor-CAD-equivalent FEMM model, with the three operating points.')}</div>
 {op_table('OP1', [])}{op_table('OP2', [])}{op_table('OP3', [])}
 <p class="tnote">Motor-CAD values from its envelope export (OP1, OP3). Motor-CAD splits iron loss into stator/rotor and hysteresis/eddy for the machine; its OP1 hysteresis {O.mcad()['OP1']['loss']['hyst']:.0f} W, eddy {O.mcad()['OP1']['loss']['eddy']:.0f} W. FEMM's OP1 iron loss is lower (the known hysteresis gap), so copper's FEMM efficiency is {OPR[CUL]['OP1']['eff'] - O.mcad()['OP1']['eff']:+.2f} points against Motor-CAD at OP1 and {OPR[CUL]['OP3']['eff'] - O.mcad()['OP3']['eff']:+.2f} at OP3. Aluminium designs are compared with FEMM copper, so this offset cancels.</p>
@@ -496,7 +543,7 @@ P['method'] = ('Method and copper baseline', f'''
 
 # one page per OD
 OD_TXT = {
-    160: 'Same OD and housing as copper. The slot can only grow inward (thinner yoke) or sideways (thinner teeth), and both cost torque per ampere-turn: −1.3 % per mm of yoke, −1.9 % per mm of tooth. Aluminium therefore needs a long stack (72–78 mm).',
+    160: 'Same OD and housing as copper. The slot can only grow inward (thinner yoke) or sideways (thinner teeth), and both cost torque per ampere-turn: −1.3 % per mm of yoke, −1.9 % per mm of tooth. Aluminium therefore needs a long stack.',
     163: 'Three extra millimetres of OD deepen the slot by 1.5 mm with the copper yoke and tooth (slot ×1.118), or by 2.5 mm with a 1 mm thinner yoke.',
     165: 'Five extra millimetres deepen the slot by 2.5 mm with the copper yoke and tooth (slot ×1.198), up to ×1.346 with a 1 mm thinner yoke and tooth.',
     167: 'The housing limit. With the copper yoke and tooth the slot is 3.5 mm deeper (×1.281); with a 1 mm thinner yoke 4.5 mm deeper (×1.365). This OD gives the best designs at every cost level.',
@@ -550,17 +597,18 @@ cmp_labs = [('OD %d: %s' % (od, r), l) for od in ODS for r, l in KEYS[od]]
 best_od = []
 for od in ODS:
     for c in ('full', 'relaxed'):
-        pk = PK['picks']['%s|%d' % (c, od)]
+        pk = PK['picks'].get('%s|%d' % (c, od), {})
         for nm, key in (('least range loss', 'best_range'), ('within 1 % range', 'cheapest_within_1.0'), ('within 1.5 %', 'cheapest_within_1.5'), ('within 2 %', 'cheapest_within_2.0'), ('largest saving', 'cheapest')):
             if key in pk:
                 d = pk[key]
                 best_od.append(['%d' % od, c, nm, short(d['label']), f(d['range'], 2, True) + ' %', f(d['range_wmtc'], 2, True) + ' %', f(-d['dcost'], 0), f(d['pwdg'], 0), f(d['dmass'], 2, True)])
 fig, ax = plt.subplots(1, 2, figsize=(12.5, 3.8))
 for c, ls in (('full', '-'), ('relaxed', '--')):
-    ax[0].plot(ODS, [PK['picks']['%s|%d' % (c, o)]['best_range']['range'] for o in ODS], 'o' + ls, color='#2563eb', label=c)
-    ax[1].plot(ODS, [-PK['picks']['%s|%d' % (c, o)]['cheapest']['dcost'] for o in ODS], 'o' + ls, color='#059669', label=c)
-    for lim, mk in ((1.0, 's'), (1.5, 'D')):
-        v = [(-PK['picks']['%s|%d' % (c, o)]['cheapest_within_%.1f' % lim]['dcost']) if 'cheapest_within_%.1f' % lim in PK['picks']['%s|%d' % (c, o)] else np.nan for o in ODS]
+    gp = lambda c, o, k, q: (PK['picks'].get('%s|%d' % (c, o), {}).get(k) or {}).get(q, np.nan)
+    ax[0].plot(ODS, [gp(c, o, 'best_range', 'range') for o in ODS], 'o' + ls, color='#2563eb', label=c)
+    ax[1].plot(ODS, [-gp(c, o, 'cheapest', 'dcost') for o in ODS], 'o' + ls, color='#059669', label=c)
+    for lim, mk in ((1.5, 's'), (2.0, 'D')):
+        v = [-gp(c, o, 'cheapest_within_%.1f' % lim, 'dcost') for o in ODS]
         ax[1].plot(ODS, v, mk + ls, color='#7c3aed', ms=5, lw=1, label='%s, within %.1f %% range' % (c, lim))
 ax[0].set_ylabel('Least range loss (%)'); ax[1].set_ylabel('Largest saving (INR)')
 for a in ax:
@@ -568,7 +616,7 @@ for a in ax:
 F_ODS = png(fig)
 P['compare'] = ('Comparison across ODs', f'''
 <p class="lede">A larger OD moves the whole cost-range front up and to the right: each mm of OD adds 0.5 mm of slot depth (about 11 mm² per slot) for about 0.06 kg (₹18) of stator steel. That is cheaper than adding stack length, which also lengthens the rotor and magnets.</p>
-{fig_html(F_ODS, 'Left: least range loss at each OD. Right: largest saving at each OD, overall and within 1 % / 1.5 % range loss.')}
+{fig_html(F_ODS, 'Left: least range loss at each OD. Right: largest saving at each OD, overall and within 1.5 % / 2 % range loss.')}
 {table(['OD', 'Criterion', 'Choice', 'Design', 'Range, telematics', 'Range, WMTC', 'Saving (INR)', 'Winding loss at peak (W)', 'Mass change (kg)'], best_od)}
 <h3>Efficiency maps of the key designs at each OD</h3>
 {''.join(fig_html(f_dmaps(KEYS[od]), 'OD %d: efficiency change against copper.' % od) for od in ODS)}
@@ -628,7 +676,7 @@ P['cost'] = ('Cost', f'''
 <p class="lede">Active-material cost per motor, at the prices given: copper wire ₹1100/kg, ferrite magnets ₹800/kg, M235-35A laminations ₹300/kg; aluminium wire ₹370/kg (copper ÷ 3.0, from Indian enamelled-wire prices).</p>
 {cost_table([(short(l), l) for l in ALLKEYS[1:]])}
 <ul>
-<li>Aluminium wire is about 8 % of the motor's material cost, so its price moves the saving by only about ±₹100 between ₹230 and ₹450/kg. The ranking of the designs does not change.</li>
+<li>Aluminium wire is about {100 * rec['cost']['wire'] / rec['cost']['total']:.0f} % of the recommended motor's material cost, so its price moves the saving by only about ±₹100 between ₹230 and ₹450/kg. The ranking of the designs does not change.</li>
 <li>Longer stacks add stator steel, rotor laminations and magnets: about ₹41–43 per mm of stack. A larger OD adds only stator steel, about ₹18 per mm of OD.</li>
 <li>Lamination cost is on net mass (stator + rotor). The larger blank at OD 167 (gross {CU['steel_gross']:.2f} → {rec['steel_gross']:.2f} kg for the recommended design) is not included, nor are the die, housing, terminations and winding process.</li>
 <li>Copper's active-material cost is ₹{CU['cost']['total']:.0f}: wire ₹{CU['cost']['wire']:.0f}, laminations ₹{CU['cost']['steel']:.0f}, magnets ₹{CU['cost']['magnet']:.0f}.</li>
@@ -637,15 +685,15 @@ P['cost'] = ('Cost', f'''
 
 # changes for the recommended design
 P['changes'] = ('Recommended design: changes', f'''
-<p class="lede">OD 167 mm, stator F2, 66 mm stack, 10 turns of 4 × 1.70 mm aluminium: −₹{saving(rec):.0f} per motor, range {rng(rec):+.2f} % (telematics) / {rng(rec, WM):+.2f} % (WMTC), torque within 1 % of copper at every speed.</p>
+<p class="lede">{desc(rec)}: −₹{saving(rec):.0f} per motor, range {rng(rec):+.2f} % (telematics) / {rng(rec, WM):+.2f} % (WMTC), torque within {100 * (1 - rec['env_ratio_min']):.1f} % of copper at every speed.</p>
 {spec_table([('Recommended', REC)])}
 <dl>
-<dt>Stator lamination</dt><dd>OD 160 → <strong>167 mm</strong>. Slot depth 17.65 → <strong>22.15 mm</strong> (slot bottom radius 71.15 → 75.65 mm). Yoke 8.85 → <strong>7.85 mm</strong>. Unchanged: bore 107 mm, 12 slots, tooth 15.54 mm, tooth tip, slot opening, slot-bottom corner radius, M235-35A 0.35 mm. Slot area 281.2 → {rec['geo']['slot_area']:.1f} mm². New lamination die and housing bore.</dd>
-<dt>Stack length</dt><dd>64 → <strong>66 mm</strong> for stator, rotor laminations and magnets (same cross-sections). Shaft, bearing span and housing +2 mm.</dd>
-<dt>Winding</dt><dd><strong>Aluminium EC-1350, grade-2 enamel, 4 strands in hand × 1.70 mm</strong> (about 1.77 mm over enamel), 10 turns per coil, delta, 2 parallel paths, one coil per tooth. Fill {rec['fill']:.3f} (copper 0.513). Mean turn {rec['mlt'] * 1e3 if rec['mlt'] < 1 else rec['mlt']:.1f} mm; {rec['R_path'] * 1e3:.2f} mΩ per path at 100 °C (copper {CU['R_path'] * 1e3:.2f}).</dd>
+<dt>Stator lamination</dt><dd>OD 160 → <strong>{rec['geo']['od']:.0f} mm</strong>. Slot depth 17.65 → <strong>{rec['geo']['slot_depth']:.2f} mm</strong> (slot bottom radius 71.15 → {53.5 + rec['geo']['slot_depth']:.2f} mm). Yoke 8.85 → <strong>{rec['geo']['yoke']:.2f} mm</strong>. Tooth 15.54 → <strong>{rec['geo']['tooth_w']:.2f} mm</strong>. Unchanged: bore 107 mm, 12 slots, tooth tip, slot opening, slot-bottom corner radius, M235-35A 0.35 mm. Slot area 281.2 → {rec['geo']['slot_area']:.1f} mm².{' New lamination die and housing bore.' if rec['geo']['od'] > 160.5 else ' New lamination die (same OD and housing).'}</dd>
+<dt>Stack length</dt><dd>64 → <strong>{rec['L']:.0f} mm</strong> for stator, rotor laminations and magnets (same cross-sections). Shaft, bearing span and housing {rec['L'] - 64:+.0f} mm.</dd>
+<dt>Winding</dt><dd><strong>Aluminium EC-1350, grade-2 enamel, {rec['ns']} strands in hand × {rec['d']:.2f} mm</strong> (about {rec['d'] + 0.042 + 0.014 * rec['d']:.2f} mm over enamel), {rec['Nc']} turns per coil, delta, 2 parallel paths, one coil per tooth. Fill {rec['fill']:.3f} (copper 0.513). Mean turn {rec['mlt'] * 1e3 if rec['mlt'] < 1 else rec['mlt']:.1f} mm; {rec['R_path'] * 1e3:.2f} mΩ per path at 100 °C (copper {CU['R_path'] * 1e3:.2f}).</dd>
 <dt>Terminations</dt><dd>Welded or crimped joints with aluminium-rated lugs or Al-Cu transitions (no soldering), sealed against galvanic corrosion.</dd>
-<dt>Drive</dt><dd>Same limits. New flux and resistance tables in the controller (flux and torque per amp +3 % with the 66 mm stack); aluminium temperature coefficient 0.00403/K.</dd>
-<dt>Thermal (to check)</dt><dd>Winding loss at peak torque {pwdg(CU):.0f} → {pwdg(rec):.0f} W (+{100 * (pwdg(rec) / pwdg(CU) - 1):.0f} %), current density {CU['peak']['J']:.1f} → {rec['peak']['J']:.1f} A/mm². Check the peak duration in Motor-CAD Thermal. Fallback: the cooler alternative (72 mm, 9 turns × 5 × 1.60 mm, +{100 * (pwdg(alt) / pwdg(CU) - 1):.0f} %), ₹{saving(rec) - saving(alt):.0f} less saving, range {rng(alt) - rng(rec):+.2f} %.</dd>
+<dt>Drive</dt><dd>Same limits. New flux and resistance tables in the controller (flux and torque per amp ×{rec['L'] * rec['Nc'] / 640:.3f} against copper: stack × turns); aluminium temperature coefficient 0.00403/K.</dd>
+<dt>Thermal (to check)</dt><dd>Winding loss at peak torque {pwdg(CU):.0f} → {pwdg(rec):.0f} W ({100 * (pwdg(rec) / pwdg(CU) - 1):+.0f} %), current density {CU['peak']['J']:.1f} → {rec['peak']['J']:.1f} A/mm². Check the peak duration in Motor-CAD Thermal. Alternative: {desc(alt)}, winding loss at peak {100 * (pwdg(alt) / pwdg(CU) - 1):+.0f} %, worst-speed torque {100 * alt['env_ratio_min']:.1f} % of copper, {('₹%.0f less' % (saving(rec) - saving(alt))) if saving(alt) < saving(rec) else ('₹%.0f more' % (saving(alt) - saving(rec)))} saving, range {rng(alt) - rng(rec):+.2f} % against the recommended design.</dd>
 </dl>
 ''')
 
@@ -682,12 +730,57 @@ P['files'] = ('Assumptions and files', f'''
 ''')
 
 order = ['summary', 'method', 'od160', 'od163', 'od165', 'od167', 'compare', 'cycle', 'cost', 'changes', 'femm', 'files']
+if abs(EWM - 0.7) > 1e-9 and os.path.exists(os.path.join(H, 'alu9795_search.json')):
+    R0 = json.load(open(os.path.join(H, 'alu9795_search.json')))
+    PK0 = json.load(open(os.path.join(H, 'alu9795_picks.json')))
+    B0 = {d['label']: d for d in R0['designs']}
+    C0 = R0['copper']
+    sav0 = lambda d: C0['cost']['total'] - d['cost']['total']
+    d0, d1 = B0[DROP], BY[DROP]
+    rows = [['Mean turn length (mm)', f(CU['mlt'] * 1e3, 1), f(d0['mlt'] * 1e3, 1), f(d1['mlt'] * 1e3, 1)],
+            ['Resistance per path, 100 °C (mΩ)', f(CU['R_path'] * 1e3), f(d0['R_path'] * 1e3), f(d1['R_path'] * 1e3)],
+            ['Phase resistance (mΩ)', f(CU['R_path'] * 1e3 / 2, 3), f(d0['R_path'] * 1e3 / 2, 3), f(d1['R_path'] * 1e3 / 2, 3)],
+            ['Line-to-line resistance, delta (mΩ)', f(CU['R_path'] * 1e3 / 3, 3), f(d0['R_path'] * 1e3 / 3, 3), f(d1['R_path'] * 1e3 / 3, 3)],
+            ['Winding mass (kg)', f(CU['masses']['winding'], 3), f(d0['masses']['winding'], 3), f(d1['masses']['winding'], 3)],
+            ['Winding loss at peak torque (W)', f(pwdg(CU), 0), f(pwdg(d0), 0), f(pwdg(d1), 0)],
+            ['Telematics Wh/km', f(CU['cycle'][TEL]['Wh_km'], 3), f(d0['cycle'][TEL]['Wh_km'], 3), f(d1['cycle'][TEL]['Wh_km'], 3)],
+            ['Range vs copper, telematics', '–', f(d0['range_pct'][TEL], 2, True) + ' %', f(rng(d1), 2, True) + ' %'],
+            ['Range vs copper, WMTC', '–', f(d0['range_pct'][WM], 2, True) + ' %', f(rng(d1, WM), 2, True) + ' %'],
+            ['Saving vs copper (INR)', '–', f(sav0(d0), 0), f(saving(d1), 0)]]
+
+    rows2 = []
+    for od in ODS + ('all',):
+        for c in ('full',):
+            p0, p1 = PK0['picks'].get('%s|%s' % (c, od)), PK['picks'].get('%s|%s' % (c, od))
+            if not (p0 and p1):
+                continue
+            for nm, key in (('least range loss', 'best_range'), ('largest saving', 'cheapest')):
+                a0, a1 = p0[key], p1[key]
+                rows2.append(['OD %s' % od if od != 'all' else 'All ODs', nm, short(a0['label']), f(a0['range'], 2, True) + ' %', f(-a0['dcost'], 0),
+                              short(a1['label']), f(a1['range'], 2, True) + ' %', f(-a1['dcost'], 0)])
+    same = [l for l in (REC, ALT, MINR) if l in B0]
+    rows3 = []
+    for lab in same:
+        d0, d1 = B0[lab], BY[lab]
+        rows3.append([short(lab), f(d0['mlt'] * 1e3, 1), f(d1['mlt'] * 1e3, 1), f(d0['R_path'] * 1e3), f(d1['R_path'] * 1e3), f(d0['range_pct'][TEL], 2, True) + ' %',
+                      f(rng(d1), 2, True) + ' %', f(sav0(d0), 0), f(saving(d1), 0), f(pwdg(d0), 0), f(pwdg(d1), 0)])
+    P['multiplier'] = ('Al multiplier %.3f vs 0.7' % EWM, f'''
+<p class="lede">The copper reference is unchanged (Design9795_1, multiplier 0.7). Aluminium windings now use an end-winding MLT multiplier of {EWM:.3f}: longer end turns raise their resistance, mass and loss, so every aluminium design loses more range and saves slightly less than in the 0.7 study.</p>
+<h3>Copper reference and the aluminium drop-in (copper wire size, 64 mm)</h3>
+{table(['', 'Copper (0.7)', 'Al drop-in, 0.7', 'Al drop-in, %.3f' % EWM], rows)}
+<h3>Best designs: 0.7 against {EWM:.3f} (full torque at every speed)</h3>
+{table(['OD', 'Choice', 'Design (0.7)', 'Range', 'Saving (INR)', 'Design (%.3f)' % EWM, 'Range', 'Saving (INR)'], rows2)}
+<p class="tnote">Range and saving are against the same copper reference (multiplier 0.7) in both columns.</p>
+<h3>The same designs at both multipliers</h3>
+{table(['Design', 'Mean turn 0.7 (mm)', 'Mean turn %.3f' % EWM, 'R/path 0.7 (mΩ)', 'R/path %.3f' % EWM, 'Range 0.7', 'Range %.3f' % EWM, 'Saving 0.7 (INR)', 'Saving %.3f (INR)' % EWM, 'Peak winding loss 0.7 (W)', 'Peak winding loss %.3f (W)' % EWM], rows3)}
+''')
+    order.insert(1, 'multiplier')
 nav = ''.join('<a href="#%s" data-p="%s">%s</a>' % (k, k, P[k][0]) for k in order)
-pages = ''.join('<section class="page" id="%s" aria-label="%s"><header class="ph"><p class="eyebrow">Design9795 · aluminium winding</p><h2>%s</h2></header>%s</section>' % (k, P[k][0], P[k][0], P[k][1]) for k in order)
+pages = ''.join('<section class="page" id="%s" aria-label="%s"><header class="ph"><p class="eyebrow">Design9795 · aluminium winding%s</p><h2>%s</h2></header>%s</section>' % (k, P[k][0], '' if abs(EWM - 0.7) < 1e-9 else ' · Al end-winding multiplier %.3f' % EWM, P[k][0], P[k][1]) for k in order)
 tpl = open(os.path.join(OUT, 'template.html'), encoding='utf-8').read()
-tpl = (tpl.replace('<title>Spoke V2 Aluminium Winding Study</title>', '<title>Design9795 Aluminium Winding</title>')
+tpl = (tpl.replace('<title>Spoke V2 Aluminium Winding Study</title>', '<title>Design9795 Aluminium %s</title>' % ('Winding' if abs(EWM - 0.7) < 1e-9 else '%.3f' % EWM))
           .replace('<h1 class="title">Spoke V2 <span>aluminium</span> winding study</h1>', '<h1 class="title">Design9795 <span>aluminium</span> winding</h1>')
-          .replace('FEMM 4.2 · tuned motor model<br>Vehicle: 757 kg, ratio 13.9<br>16 Oct 2026', 'FEMM 4.2 · Motor-CAD-equivalent model<br>OD 160–167 · M235-35A<br>17 Oct 2026')
+          .replace('FEMM 4.2 · tuned motor model<br>Vehicle: 757 kg, ratio 13.9<br>16 Oct 2026', 'FEMM 4.2 · Motor-CAD-equivalent model<br>OD 160–167 · M235-35A<br>Al end-winding multiplier %.3f (Cu 0.7)<br>17 Oct 2026' % EWM)
           .replace('.tw:has(table.sheet)', 'tr.hl td { background: var(--alu-tint) } .tw:has(table.sheet)'))
 html = tpl.replace('{{NAV}}', nav).replace('{{PAGES}}', pages)
 open(os.path.join(OUT, 'index.html'), 'w', encoding='utf-8').write(html)

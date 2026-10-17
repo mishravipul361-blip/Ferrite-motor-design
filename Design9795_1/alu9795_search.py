@@ -126,7 +126,7 @@ def metrics(d):
     return out, eff
 
 
-LS = (64, 66, 68, 70, 72, 74, 76, 78, 80)
+LS = tuple(float(x) for x in os.environ['LS'].split(',')) if os.environ.get('LS') else (64, 66, 68, 70, 72, 74, 76, 78, 80)
 
 
 def designs(svs=None, Ls=LS, Ncs=(8, 9, 10)):

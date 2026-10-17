@@ -32,7 +32,9 @@ IEC = [1.0, 1.06, 1.12, 1.18, 1.25, 1.32, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1
        3.15, 3.35, 3.55, 3.75, 4.0, 4.25, 4.5]
 SWG = [3.251, 2.9464, 2.642, 2.337, 2.032, 1.829, 1.626, 1.422]
 WIRE_SIZES = sorted(set(IEC + SWG))
-MLT_END0 = 75.634
+MLT_END0 = 75.634                                   # Motor-CAD EWdg MLT of Design9795_1 at its armature EWdg MLT multiplier 0.7
+EW_MULT = float(os.environ.get('EW_MULT_AL', 0.7))   # armature end-winding MLT multiplier for ALUMINIUM windings (copper reference stays at 0.7)
+KEW = EW_MULT / 0.7
 STACK = L.M.STACK
 ROTOR_LAM_AREA, MAGNET_AREA = 3056.8, 4492.7     # mm2, full machine (FEMM, Design9795_1 rotor)
 DENS_FERRITE = 4800.0
@@ -107,7 +109,7 @@ class Design:
         g, g0 = geo(sv), geo('D0')
         self.geo = g
         tc = g['slot_area'] / 2 / (g['stator']['slot_depth'] - 1.3); tc0 = g0['slot_area'] / 2 / (g0['stator']['slot_depth'] - 1.3)
-        self.mlt = (2 * Lmm + MLT_END0 + 2 * (g['stator']['tooth_w'] - g0['stator']['tooth_w']) + math.pi * (tc - tc0)) * 1e-3
+        self.mlt = (2 * Lmm + (KEW if metal == 'Al' else 1.0) * (MLT_END0 + 2 * (g['stator']['tooth_w'] - g0['stator']['tooth_w']) + math.pi * (tc - tc0))) * 1e-3
         self.R_path = self.rho * 2 * Nc * self.mlt / self.A
         self.fill = 2 * Nc * ns * math.pi / 4 * (d + INS(d)) ** 2 / g['slot_area']
         self.label = label or '%s %s L%.0f N%d %dx%.2f' % (metal, sv, Lmm, Nc, ns, d)

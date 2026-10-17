@@ -27,7 +27,8 @@ def main():
                 done[r['key']] = r
         finally:
             F.RG.kill_femm_children()
-    out = {}
+    fn = os.path.join(F.H, 'alu9795_verify.json')
+    out = json.load(open(fn)) if os.path.exists(fn) else {}
     for sv in svs:
         rows = []
         for a, b in PTS:
@@ -48,7 +49,7 @@ def main():
             print(sv, '%6.1f %6.1f' % (i_d, i_q), 'dpsiq femm %+.5f interp %+.5f (of %.4f) | rSa femm %.3f interp %.3f | T %.2f -> %.2f' % (
                 row['dpsiq_femm4'], row['dpsiq_interp'], row['psiq_D0'], row['rst_Sa_femm4'], row['rst_Sa_interp'], row['T_D0'], row['T_sv']), flush=True)
         out[sv] = rows
-    json.dump(out, open(os.path.join(F.H, 'alu9795_verify.json'), 'w'), indent=1)
+    json.dump(out, open(fn, 'w'), indent=1)
 
 
 if __name__ == '__main__':

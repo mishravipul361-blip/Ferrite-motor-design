@@ -68,7 +68,7 @@ def main():
                     pk['cheapest_within_%.1f' % lim] = min(g, key=lambda d: d['dcost'])
             pk['cheapest'] = min(f, key=lambda d: d['dcost'])
             out['picks']['%s|%s' % (c, od)] = pk
-    json.dump(out, open(os.path.join(H, 'alu9795_picks.json'), 'w'), indent=1, default=float)
+    json.dump(out, open(os.path.join(H, os.environ.get('PICKS', 'alu9795_picks.json')), 'w'), indent=1, default=float)
     print('copper: T %.2f N.m, winding loss %.0f W, cost %.0f INR, %.3f Wh/km' % (CU['peak']['T'], CU['peak']['pcu'] + CU['peak']['pac'],
           CU['cost']['total'], CU['cycle'][CY]['Wh_km']))
     for k, pk in out['picks'].items():
