@@ -129,12 +129,26 @@ def metrics(d):
 LS = tuple(float(x) for x in os.environ['LS'].split(',')) if os.environ.get('LS') else (64, 66, 68, 70, 72, 74, 76, 78, 80)
 
 
-def designs(svs=None, Ls=LS, Ncs=(8, 9, 10)):
+NCS = tuple(int(x) for x in os.environ['NCS'].split(',')) if os.environ.get('NCS') else (8, 9, 10)
+NS_MAX = int(os.environ.get('NS_MAX', 6))
+
+
+def wires(sv, Nc):
+    ws = S.wire_options(sv, Nc, 'Al', ns_max=NS_MAX)
+    if not S.BUNDLE or not ws:
+        return ws
+    # bundle effect: the strand count changes neither DC nor AC loss at equal area -> the largest area, and the fewest strands within 3 % of it
+    big = max(ws, key=lambda w: w['A'])
+    few = min((w for w in ws if w['A'] >= 0.97 * big['A']), key=lambda w: w['ns'])
+    return [big] if few is big else [few, big]
+
+
+def designs(svs=None, Ls=LS, Ncs=NCS):
     out = []
     svs = svs or (list(S.FEM['designs']) if S.FEM else ['D0'])
     for sv in svs:
         for Nc in Ncs:
-            for w in S.wire_options(sv, Nc, 'Al'):
+            for w in wires(sv, Nc):
                 for Lmm in Ls:
                     out.append(dict(metal='Al', sv=sv, Nc=Nc, ns=w['ns'], d=w['d'], Lmm=float(Lmm)))
     out.append(dict(metal='Al', sv='D0', Nc=10, ns=1, d=S.D_CU0, Lmm=64.0, label='Al drop-in (SWG 11 size, 64 mm)'))

@@ -34,7 +34,12 @@ DESIGNS = {'D0': at(),                                            # copper stato
            # larger stator OD, hard limit 167 mm (housing), rotor unchanged
            'G1': at(od=163.0), 'G2': at(od=163.0, yoke=7.85), 'G3': at(od=163.0, yoke=7.85, dt=-1.0),
            'B1': at(od=165.0), 'B2': at(od=165.0, yoke=7.85), 'B3': at(od=165.0, yoke=7.85, dt=-1.0),
-           'F1': at(od=167.0), 'F2': at(od=167.0, yoke=7.85), 'F3': at(od=167.0, yoke=7.85, dt=-1.0), 'F4': at(od=167.0, yoke=6.85, dt=-1.0)}
+           'F1': at(od=167.0), 'F2': at(od=167.0, yoke=7.85), 'F3': at(od=167.0, yoke=7.85, dt=-1.0), 'F4': at(od=167.0, yoke=6.85, dt=-1.0),
+           # thin-yoke fill-ins and OD 170 for the 40 % fill conventional aluminium winding (user, 2026-10-17)
+           'G4': at(od=163.0, yoke=6.85), 'G5': at(od=163.0, yoke=6.85, dt=-1.0), 'B4': at(od=165.0, yoke=6.85), 'B5': at(od=165.0, yoke=6.85, dt=-1.0),
+           'F5': at(od=167.0, yoke=6.85),
+           'K1': at(od=170.0), 'K2': at(od=170.0, yoke=7.85), 'K3': at(od=170.0, yoke=6.85), 'K4': at(od=170.0, yoke=7.85, dt=-1.0),
+           'K5': at(od=170.0, yoke=6.85, dt=-1.0), 'K6': at(od=170.0, yoke=7.85, dt=-2.0)}
 IDS = np.linspace(-L.I_PATH_PK, 0, 4); IQS = np.linspace(0, L.I_PATH_PK, 4)
 POS = (0.0, 6.0)
 W = {'design': None}

@@ -48,6 +48,11 @@ def geo(sv):
 
 
 FILL_MAX = 20 * math.pi / 4 * (D_CU0 + INS(D_CU0)) ** 2 / geo('D0')['slot_area']      # 0.5129 (Motor-CAD wire fill)
+# conventional (non-busbar) aluminium winding, user 2026-10-17: FILL_AL=0.40 insulated wire fill, D_MAX=3.0 mm (wire maker's limit),
+# BUNDLE=1: proximity loss of the strands in hand as one bundle of the same total area (Motor-CAD 'Include Bundle Effect')
+FILL_AL = float(os.environ.get('FILL_AL', FILL_MAX))
+D_MAX = float(os.environ.get('D_MAX', 99.0))
+BUNDLE = os.environ.get('BUNDLE', '0') == '1'
 BASE = LM.Model('v3', slices=(-2, 0, 2), torque='flux')
 
 
@@ -88,11 +93,12 @@ def fields(sv, s, npts, G=None):
 
 
 def wire_options(sv, Nc, metal, ns_max=6, d_min=1.0):
-    """Per strand count: the largest wire that keeps the insulated wire fill at or below the copper design's."""
+    """Per strand count: the largest wire (<= D_MAX) that keeps the insulated wire fill at or below the limit (copper's, or FILL_AL for aluminium)."""
     As = geo(sv)['slot_area']
+    fmax = FILL_AL if metal == 'Al' else FILL_MAX
     out = []
     for ns in range(1, ns_max + 1):
-        fits = [d for d in WIRE_SIZES if d >= d_min and 2 * Nc * ns * math.pi / 4 * (d + INS(d)) ** 2 <= FILL_MAX * As + 1e-9]
+        fits = [d for d in WIRE_SIZES if d_min <= d <= D_MAX and 2 * Nc * ns * math.pi / 4 * (d + INS(d)) ** 2 <= fmax * As + 1e-9]
         if fits:
             d = fits[-1]
             out.append(dict(ns=ns, d=d, A=ns * math.pi / 4 * d * d, fill=2 * Nc * ns * math.pi / 4 * (d + INS(d)) ** 2 / As))
@@ -132,7 +138,7 @@ class Design:
         vd = self.R_path * i_d - we * psq; vq = self.R_path * i_q + we * psd
         v = np.hypot(vd, vq)
         pcu = 3 * self.R_path * Ipk ** 2
-        pac = L.AC_ADJ * (24 * self.Nc * self.ns) * math.pi * self.L * 1e-3 * (self.d * 1e-3) ** 4 * (2 * math.pi * f) ** 2 * \
+        pac = L.AC_ADJ * (24 * self.Nc * self.ns) * (self.ns if BUNDLE else 1) * math.pi * self.L * 1e-3 * (self.d * 1e-3) ** 4 * (2 * math.pi * f) ** 2 * \
             (2 * np.maximum(V['cu_B2'] * C['rcu'], 0)) / (128 * self.rho)
         st_h = kL * L.BF * Wi['stator_H1'] * f * C['rSa']; st_e = kL * L.BF * Wi['stator_E1'] * f * f * C['rS2']
         rt_h = kL * L.BF * Wi['rotor_H1'] * f; rt_e = kL * L.BF * Wi['rotor_E1'] * f * f

@@ -16,7 +16,7 @@ R = json.load(open(os.path.join(H, os.environ.get('IN', 'alu9795_search.json')))
 CU = R['copper']; DS = R['designs']; PRICE = R['price']
 CY = 'Telematics'
 CRIT = {'full': (0.995, 0.99), 'relaxed': (0.995, 0.97)}
-ODS = (160, 163, 165, 167)
+ODS = (160, 163, 165, 167, 170)
 AL_PRICES = (230.0, 370.0, 450.0)
 
 
